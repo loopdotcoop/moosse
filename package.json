@@ -1,6 +1,6 @@
 {
   "name": "oompsh",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A Node.js app broadcasting Server-Sent Events in response to a private channel",
   "main": "oompsh.js",
   "engines": {

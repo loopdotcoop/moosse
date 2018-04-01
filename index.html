@@ -15,10 +15,37 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.2</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.3</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js app broadcasting Server-Sent Events in response to a private channel">
 <link rel="author" href="README.md">
+
+
+
+
+<!-- SCRIPT AND STYLE -->
+
+<style>
+input, pre {
+    width: 100%;
+    padding: 1em;
+    box-sizing: border-box;
+    border-radius: 0.5em;
+    border: none;
+    background: #ddd;
+    font: 1em/0.65 monospace;
+}
+input {
+    width: 50%;
+    background: #cde;
+    border-top: 2px solid #abc;
+    border-bottom: 2px solid #def;
+}
+</style>
+
+
+
+
 
 </head>
 <body>
@@ -29,7 +56,7 @@
 <!-- HEADER -->
 
 <!-- Header and Navigation menu -->
-<h1>Oompsh 0.0.2</h1><!-- OOMBUMPABLE -->
+<h1>Oompsh 0.0.3</h1><!-- OOMBUMPABLE -->
 <nav>
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -40,10 +67,66 @@
 
 <h2>A Node.js app broadcasting Server-Sent Events in response to a private channel</h2>
 
+<hr>
+<input value="post,page" placeholder="types"></input>
+<pre>Loading...</pre>
+
 <!-- Upgrade message for Internet Explorer 8 and below --><!--[if lte IE 8]>
 <script>document.getElementById('version').innerHTML='Not Supported'</script>
 <h2>Please upgrade to Internet Explorer 9 or higher</h2><![endif]-->
 <!-- Begin hiding from IE 8 and below --><!--[if gte IE 9 | !IE ]><!-->
+
+
+
+
+<!-- Example -->
+<script>!function(){
+
+var $input = document.querySelector('input').focus()
+  , $pre = document.querySelector('pre')
+  , log = []
+
+if (! window.EventSource) {
+    log.push('EventSource not supprted - @TODO resort to Ajax polling')
+    render()
+} else {
+    const events = new EventSource('events')
+    events.addEventListener('message', function(e) {
+        let data
+        try {
+            data = JSON.parse(e.data)
+        } catch (err) {
+            log.push('JSON error: ' + err.message)
+            log.push(e.data); render()
+        }
+        if (data) {
+            log.push('time: ' + data.date); render()
+        } else {
+            events.close()
+        }
+    }, false)
+
+    events.addEventListener('open', function(e) {
+        log.push('Connection was opened'); render()
+    }, false)
+
+    events.addEventListener('error', function(e) {
+        if (EventSource.CLOSED === e.readyState) {
+            log.push('Connection was closed'); render()
+        } else {
+            log.push('Error: readyState ' + e.readyState); render()
+        }
+    }, false)
+}
+
+function render () {
+    $pre.innerHTML = ''
+      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
+      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
+      + log.join('<br>\n')
+}
+
+}()</script>
 
 
 
