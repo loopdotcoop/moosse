@@ -100,7 +100,7 @@ if (! window.EventSource) {
             log.push(e.data); render()
         }
         if (data) {
-            log.push('time: ' + data.date); render()
+            log.push('time: ' + data.time); render()
         } else {
             events.close()
         }
