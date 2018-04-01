@@ -3,7 +3,7 @@
 #### A Node.js app broadcasting Server-Sent Events in response to a private channel
 
 + __Last update:__  2018/04/01 <!-- OOMBUMPABLE -->
-+ __Version:__      0.0.1 <!-- OOMBUMPABLE -->
++ __Version:__      0.0.2 <!-- OOMBUMPABLE -->
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -28,7 +28,7 @@ Server-Sent Events
 Designed, developed and authored by Rich Plastow for Loop.Coop.
 
 + __Website:__
-  [richplastow.com](https://richplastow.com/) &nbsp;
+  [richplastow.com](http://richplastow.com/) &nbsp;
   [loop.coop](https://loop.coop/)
 + __GitHub:__
   [richplastow](https://github.com/richplastow) &nbsp;

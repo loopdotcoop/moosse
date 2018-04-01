@@ -1,0 +1,38 @@
+{
+  "name": "oompsh",
+  "version": "0.0.2",
+  "description": "A Node.js app broadcasting Server-Sent Events in response to a private channel",
+  "main": "oompsh.js",
+  "engines": {
+    "node": "8.9.4"
+  },
+  "directories": {
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "start": "node oompsh.js",
+    "test": "node test.js@TODO"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loopdotcoop/oompsh.git"
+  },
+  "keywords": [
+    "Oom",
+    "Reactive",
+    "Push",
+    "Server-Sent Events"
+  ],
+  "author": "Rich Plastow <rich@richplastow.com> (http://richplastow.com/)",
+  "contributors": [
+    "Loop.Coop <info@loop.coop> (https://loop.coop/)"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/loopdotcoop/oompsh/issues"
+  },
+  "homepage": "http://oompsh.loop.coop/"
+}
