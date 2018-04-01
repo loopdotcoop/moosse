@@ -1,3 +1,4 @@
+const eventClients = []
 const app = require('http').createServer(server)
 const port = process.env.PORT || 3000 // Heroku sets $PORT
 app.listen( port, () => console.log(`App is listening on port ${port}`) )
@@ -15,7 +16,8 @@ function server (req, res) {
     //// Deal with a request to listen for SSEs.
     else if ('/events' === req.url && 'GET' === req.method) {
         if (req.headers.accept && 'text/event-stream' === req.headers.accept) {
-            sendSSE(req, res)
+            eventClients.push({ req, res })
+            beginSSE(req, res)
         } else {
             res.writeHead(404, {'Content-Type': 'text/html'})
             res.end('Error: ‘accept’ header is not ‘text/event-stream’\n')
@@ -30,8 +32,15 @@ function server (req, res) {
 
     //// Deal with a notification on the private channel.
     else if ('/notify' === req.url && 'POST' === req.method) {
-        res.writeHead(200, {'Content-Type': 'text/plain'})
-        res.end('@TODO deal with notify\n')
+        let data = []
+        req.on( 'data', chunk => data.push(chunk) )
+           .on( 'end', () => {
+                data = Buffer.concat(data).toString()
+                // console.log('@TODO deal with notify', data);
+                res.writeHead(200, {'Content-Type': 'text/plain'})
+                const tally = broadcast(data)
+                res.end('Broadcast to ' + tally + ' event client(s)\n')
+           })
     }
 
     //// Not found.
@@ -42,24 +51,37 @@ function server (req, res) {
 
 }
 
-function sendSSE (req, res) {
+function broadcast (payload) {
+    let tally = 0
+    eventClients.forEach( client => {
+        sendSSE( client.res, 'broadcast', {
+            time: (new Date()).toLocaleTimeString()
+          , payload
+        })
+        tally++
+    })
+    return tally
+}
+
+function beginSSE (req, res) {
     res.writeHead(200, {
         'Content-Type':  'text/event-stream'
       , 'Cache-Control': 'no-cache'
       , 'Connection':    'keep-alive'
     })
 
-    const id = (new Date()).toLocaleTimeString()
+    //// Send an SSE every eight seconds on a single connection.
+    // setInterval(function() {
+    //     sendSSE( res, id, { time:(new Date()).toLocaleTimeString(), payload } )
+    // }, 8000)
 
-    //// Send an SSE every two seconds on a single connection.
-    setInterval(function() {
-        constructSSE( res, id, { time:(new Date()).toLocaleTimeString() } )
-    }, 2000)
-
-    constructSSE( res, id, { time:(new Date()).toLocaleTimeString() } )
+    sendSSE( res, 'begin', {
+        time: (new Date()).toLocaleTimeString()
+      , payload: 'begun'
+    })
 }
 
-function constructSSE(res, id, data) {
+function sendSSE(res, id, data) {
     res.write('id: ' + id + '\n')
     JSON.stringify(data, 2).split('\n').forEach(
         line => res.write('data: ' + line + '\n') )

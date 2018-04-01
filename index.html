@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.3</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.4</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js app broadcasting Server-Sent Events in response to a private channel">
 <link rel="author" href="README.md">
@@ -56,7 +56,7 @@ input {
 <!-- HEADER -->
 
 <!-- Header and Navigation menu -->
-<h1>Oompsh 0.0.3</h1><!-- OOMBUMPABLE -->
+<h1>Oompsh 0.0.4</h1><!-- OOMBUMPABLE -->
 <nav>
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -67,22 +67,62 @@ input {
 
 <h2>A Node.js app broadcasting Server-Sent Events in response to a private channel</h2>
 
+
+
+
 <hr>
+<h4>Notify Client Example:</h4>
+<input  id="broadcast-url" placeholder="http://localhost:3000/notify"></input><br>
+<input  id="broadcast-msg" placeholder="Message to send"></input>
+<button id="broadcast-btn">Broadcast</button>
+<script>!function(){
+const
+    $url = document.querySelector('#broadcast-url')
+  , $msg = document.querySelector('#broadcast-msg')
+  , $btn = document.querySelector('#broadcast-btn')
+  , loc = location.href
+  , notify = 'index.html' === loc.slice(-10) ? loc.slice(0,-10) : loc
+$url.setAttribute('placeholder', -1 === notify.indexOf('localhost')
+  ? 'https://apricot-custard-98918.herokuapp.com/notify' : notify + 'notify'
+)
+document.querySelector('#broadcast-btn').addEventListener('click', broadcast)
+function broadcast () {
+    const
+        url = $url.value || $url.getAttribute('placeholder')
+      , msg = $msg.value || $msg.getAttribute('placeholder')
+    post(url, msg)
+       .then( data => {
+           console.log('ok!', data);
+        })
+       .catch( err => {
+           console.log('oh no!', err);
+        })
+}
+
+function post(url, data) {
+    return new Promise( (resolve, reject) => {
+        const req = new XMLHttpRequest()
+        req.open('POST', url, true)
+        req.onload = () => 200 === req.status
+          ? resolve(req.response) : reject( Error(req.statusText) )
+        req.onerror = e =>
+            reject( Error(`Network Error: ${e}`) )
+        req.send(data)
+    })
+}
+
+}()</script>
+
+
+
+
+<hr>
+<h4>Events Client Example:</h4>
 <input value="post,page" placeholder="types"></input>
 <pre>Loading...</pre>
-
-<!-- Upgrade message for Internet Explorer 8 and below --><!--[if lte IE 8]>
-<script>document.getElementById('version').innerHTML='Not Supported'</script>
-<h2>Please upgrade to Internet Explorer 9 or higher</h2><![endif]-->
-<!-- Begin hiding from IE 8 and below --><!--[if gte IE 9 | !IE ]><!-->
-
-
-
-
-<!-- Example -->
 <script>!function(){
-
-var $input = document.querySelector('input').focus()
+const
+    $input = document.querySelector('input').focus()
   , $pre = document.querySelector('pre')
   , log = []
 
@@ -100,7 +140,7 @@ if (! window.EventSource) {
             log.push(e.data); render()
         }
         if (data) {
-            log.push('time: ' + data.time); render()
+            log.push(data.time + ': ' + data.payload); render()
         } else {
             events.close()
         }
@@ -130,8 +170,6 @@ function render () {
 
 
 
-
-<!-- End hiding from Internet Explorer 8 and below --><!--<![endif]-->
 
 </div><!--.container -->
 </body>

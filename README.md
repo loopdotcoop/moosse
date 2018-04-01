@@ -3,7 +3,7 @@
 #### A Node.js app broadcasting Server-Sent Events in response to a private channel
 
 + __Last update:__  2018/04/01 <!-- OOMBUMPABLE -->
-+ __Version:__      0.0.3 <!-- OOMBUMPABLE -->
++ __Version:__      0.0.4 <!-- OOMBUMPABLE -->
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
