@@ -14,10 +14,18 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 
 //// Serve the proper response.
 function server (req, res) {
+
+    //// Set our default headers. Note that 'Content-Type' will be overridden
+    //// for '/' and '/index.html', or for an SSE connection.
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Cache-Control', 'no-cache') // anything might change any time
+
+    //// Deal with the request depending on its method.
     if ('GET'  === req.method) return serveGET(req, res)
     if ('POST' === req.method) return servePOST(req, res)
-    res.writeHead(405, {'Content-Type':'text/plain'})
-    res.end('METHOD NOT ALLOWED: Use GET or POST\n')
+    res.writeHead(405)
+    res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
 
 
@@ -26,21 +34,21 @@ function serveGET (req, res) {
 
     //// A version request.
     if ('/version' === req.url ) {
-        res.writeHead(200, {'Content-Type':'text/plain'})
-        res.end('Oompsh ' + require('./package.json').version + '\n')
+        res.writeHead(200)
+        res.end('{ "ok":"Oompsh ' + require('./package.json').version + '" }\n')
     }
 
     //// A request for the example client page.
     else if ('/' === req.url || '/index.html' === req.url) {
-        res.writeHead(200, {'Content-Type': 'text/html'})
+        res.writeHead(200, {'Content-Type': 'text/html'}) // override JSON
         res.end( require('fs').readFileSync(__dirname + '/index.html') )
     }
 
     //// A request to start listening for Server-Sent Events.
     else if ( '/events' === req.url.slice(0,7) ) {
         if (! req.headers.accept || 'text/event-stream' !== req.headers.accept) {
-            res.writeHead(406, {'Content-Type':'text/plain'})
-            res.end('NOT ACCEPTIBLE: ‘Accept’ header not ‘text/event-stream’\n')
+            res.writeHead(406)
+            res.end('{ "error":"NOT ACCEPTIBLE: Needs ‘Accept: text/event-stream’" }\n')
         } else {
             res.oompshid = (Math.random()*1e16).toString(36)
             res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
@@ -52,8 +60,8 @@ function serveGET (req, res) {
 
     //// Not found.
     else {
-        res.writeHead(404, {'Content-Type':'text/plain'})
-        res.end('NOT FOUND: See documentation at http://oompsh.loop.coop/\n')
+        res.writeHead(404)
+        res.end('{ "error":"NOT FOUND: See docs, http://oompsh.loop.coop/" }\n')
     }
 
 }//serveGET()
@@ -65,11 +73,11 @@ function servePOST (req, res) {
 
     //// Authenticate credentials.
     if (! userpassRx.test(userpass) ) {
-        res.writeHead(401, {'Content-Type':'text/plain'})
-        res.end('UNAUTHORIZED: ‘username:password’ fails ' + userpassRx + '\n')
+        res.writeHead(401)
+        res.end('{ "error":"UNAUTHORIZED: Invalid username:password" }\n')
     } else if (! auths[userpass] ) {
-        res.writeHead(401, {'Content-Type':'text/plain'})
-        res.end('UNAUTHORIZED: username:password combination not recognised\n')
+        res.writeHead(401)
+        res.end('{ "error":"UNAUTHORIZED: Unrecognised username:password" }\n')
     }
 
     //// A hard-disconnect instruction. @TODO hard-disconnect a specific clientID
@@ -79,8 +87,8 @@ function servePOST (req, res) {
             clientRes.end(': bye!') // SSE comments begin with a colon
             tally++
         }
-        res.writeHead(201, {'Content-Type':'text/plain'})
-        res.end("Hard-disconnected " + tally + ' event client(s)\n')
+        res.writeHead(201)
+        res.write('{ "ok":"Hard-disconnected ' + tally + ' enduser(s)" }\n')
     }
 
     //// A disconnect instruction. @TODO disconnect a specific clientID
@@ -93,8 +101,8 @@ function servePOST (req, res) {
           }, 'disconnect')
             tally++
         }
-        res.writeHead(201, {'Content-Type':'text/plain'})
-        res.end("Broadcast 'disconnect' to " + tally + ' event client(s)\n')
+        res.writeHead(201)
+        res.write('{ "ok":"Broadcast ‘disconnect’ to '+tally+' enduser(s)" }\n')
     }
 
     //// Deal with an admin notification.
@@ -103,16 +111,16 @@ function servePOST (req, res) {
         req.on( 'data', chunk => data.push(chunk) )
            .on( 'end', () => {
                 data = Buffer.concat(data).toString()
-                res.writeHead(201, {'Content-Type':'text/plain'})
+                res.writeHead(201)
                 const tally = broadcast(data)
-                res.end('Broadcast to ' + tally + ' event client(s)\n')
+                res.end('{ "ok":"Broadcast to ' + tally + ' enduser(s)" }\n')
            })
     }
 
     //// Not found.
     else {
-        res.writeHead(404, {'Content-Type':'text/plain'})
-        res.end('NOT FOUND: See documentation at http://oompsh.loop.coop/\n')
+        res.writeHead(404)
+        res.end('{ "error":"NOT FOUND: See docs, http://oompsh.loop.coop/" }\n')
     }
 
 }//servePOST()
@@ -173,10 +181,9 @@ function broadcast (payload, eventName=null) {
 
 function beginSSE (req, res) {
     res.writeHead(200, {
-        'Content-Type':  'text/event-stream'
-      , 'Cache-Control': 'no-cache'
+        'Content-Type':  'text/event-stream' // override JSON
       , 'Connection':    'keep-alive'
-    })
+    }) // we already set 'Cache-Control: no-cache'
 
     //// Send an SSE every eight seconds on a single connection.
     // setInterval(function() {

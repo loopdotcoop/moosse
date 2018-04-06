@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.5</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.6</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -88,7 +88,7 @@ pre .error  { color: red }
 <!-- HEADER -->
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.0.5</h2><!-- OOMBUMPABLE -->
+<h2>Oompsh 0.0.6</h2><!-- OOMBUMPABLE -->
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -141,27 +141,50 @@ function send () {
             console.warn('http:// is allowed under localhost')
         else throw Error('URL must begin ‘https://’ (unless localhost)')
     post(url, user, pass, msg)
-       .then( data => render(data, 'remote') )
-       .catch( err => render('Error: ' + err, 'error') )
+       .then( data => render(data) )
+       .catch(data => render(data) )
 }
 
 function post(url, user, pass, data) {
+    return fetch(
+        url + '/' + user + ':' + pass  // eg 'http://localhost:1234/notify/j:pw'
+      , {   body: JSON.stringify(data) // must match 'Content-Type' header
+          , method:      'POST'        // *GET, POST, PUT, DELETE, etc.
+          , cache:       'no-cache'    // *default, no-cache, reload, force-c...
+          , mode:        'cors'        // *same-origin, no-cors, cors
+          , redirect:    'error'       // *manual, follow, error
+          , referrer:    'no-referrer' // *client, no-referrer
+          , credentials: 'omit'        // *omit, include, same-origin
+          , headers: {
+                'Content-Type':'application/json'
+            }
+    }).then(res => res.json()) // parse response to JSON
+
+/*
     return new Promise( (resolve, reject) => {
         const req = new XMLHttpRequest()
         req.open('POST', url + '/' + user + ':' + pass, true)
         req.onload = () => 201 === req.status
           ? resolve(req.response) : reject(req.status + ' ' + req.response)
-        req.onerror = err =>
+        req.onerror = err => {
             reject('Network Error: ' + JSON.stringify(err))
+            console.log(err);
+        }
         req.send(data)
     })
+*/
 }
 
 function render (msg, label='local') {
-    if (msg)
+    if (msg) {
+        if ('object' === typeof msg) {
+            label = msg.error ? 'error' : 'remote'
+            msg = msg.ok || msg.error
+        }
         log.unshift('<span class="' + label + '">'
           + ('    ' + lognum++).slice(-4) + ' ' + msg.trim()
           + '</span>' )
+    }
     log = log.slice(0,10)
     $log.innerHTML = ''
       // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
