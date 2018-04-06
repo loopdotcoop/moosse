@@ -15,40 +15,59 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 //// Serve the proper response.
 function server (req, res) {
 
-    //// Set our default headers. Note that 'Content-Type' will be overridden
-    //// for '/' and '/index.html', or for an SSE connection.
+    //// Serve a top-level file.
+    if ( 0 > req.url.slice(1).indexOf('/') ) return serveFile(req, res)
+
+    //// Set default headers. Note that 'Content-Type' will be overridden for
+    //// an SSE connection.
     res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json')
     // res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Content-Length')
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('Cache-Control', 'no-cache') // anything might change any time
 
+    //// Parse the three standard parts of the URL.
+    const [ userpass, action, target ] = req.url.slice(1).split('/')
+
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return res.writeHead(200)
-    if ('GET'     === req.method) return serveGET(req, res)
-    if ('POST'    === req.method) return servePOST(req, res)
+    if ('OPTIONS' === req.method) return res.writeHead(200) //@TODO remove this?
+    if ('GET'     === req.method) return  serveGET(req, res, userpass, action, target)
+    if ('POST'    === req.method) return servePOST(req, res, userpass, action, target)
     res.writeHead(405)
     res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
 
 
+//// Serve a top-level file.
+function serveFile (req, res) {
+
+    //// A request for the example client page.
+    if ('/' === req.url || '/index.html' === req.url) {
+        res.writeHead(200, {'Content-Type': 'text/html'})
+        res.end( require('fs').readFileSync(__dirname + '/index.html') )
+    }
+
+    //// Not found.
+    else {
+        res.writeHead(404, {'Content-Type': 'text/plain'})
+        res.end('NOT FOUND: See docs, http://oompsh.loop.coop/\n')
+    }
+
+}
+
 //// Serve a GET request.
-function serveGET (req, res) {
+function serveGET (req, res, userpass, action, target) {
 
     //// A version request.
-    if ('/version' === req.url ) {
+    if ('version' === action) {
         res.writeHead(200)
         res.end('{ "ok":"Oompsh ' + require('./package.json').version + '" }\n')
     }
 
-    //// A request for the example client page.
-    else if ('/' === req.url || '/index.html' === req.url) {
-        res.writeHead(200, {'Content-Type': 'text/html'}) // override JSON
-        res.end( require('fs').readFileSync(__dirname + '/index.html') )
-    }
-
     //// A request to start listening for Server-Sent Events.
-    else if ( '/events' === req.url.slice(0,7) ) {
+    else if ('connect' === action) {
         if (! req.headers.accept || 'text/event-stream' !== req.headers.accept) {
             res.writeHead(406)
             res.end('{ "error":"NOT ACCEPTIBLE: Needs ‘Accept: text/event-stream’" }\n')
@@ -71,8 +90,7 @@ function serveGET (req, res) {
 
 
 //// Serve a POST request.
-function servePOST (req, res) {
-    const [ action, userpass ] = req.url.slice(1).split('/')
+function servePOST (req, res, userpass, action, target) {
 
     //// Authenticate credentials.
     if (! userpassRx.test(userpass) ) {
@@ -100,7 +118,7 @@ function servePOST (req, res) {
         while ( clientRes = eventClients.pop() ) {
             sendSSE(clientRes, 'id here', {
                 time: (new Date()).toLocaleTimeString()
-              , payload: 'admin sent a disconnect instruction'
+              , ok: 'admin sent a disconnect instruction'
           }, 'disconnect')
             tally++
         }
@@ -175,7 +193,7 @@ function broadcast (payload, eventName=null) {
     eventClients.forEach( res => {
         sendSSE( res, 'broadcast', {
             time: (new Date()).toLocaleTimeString()
-          , payload
+          , ok: payload
         }, eventName)
         tally++
     })
@@ -195,7 +213,7 @@ function beginSSE (req, res) {
 
     sendSSE( res, 'begin', {
         time: (new Date()).toLocaleTimeString()
-      , payload: 'begun'
+      , ok: 'SSE session has begun'
     })
 }
 

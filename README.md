@@ -3,14 +3,13 @@
 #### A Node.js server which adds realtime push notification to Oom apps
 
 + __Last update:__  2018/04/06 <!-- OOMBUMPABLE -->
-+ __Version:__      0.0.6 <!-- OOMBUMPABLE -->
++ __Version:__      0.0.7 <!-- OOMBUMPABLE -->
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
 [NPM](https://www.npmjs.com/package/oompsh) &nbsp;
 [Changelog](http://oompsh.loop.coop/CHANGELOG) &nbsp;
-[Test @TODO](http://oompsh.loop.coop/support/test.html) &nbsp;
-[Demo @TODO](http://oompsh.loop.coop/support/demo.html)  
+[Test @TODO](http://oompsh.loop.coop/support/test.html)
 
 Oom &nbsp;
 🔅 &nbsp;

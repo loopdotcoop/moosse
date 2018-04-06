@@ -6,3 +6,4 @@
 0.0.4 POST to ‘/notify’ to broadcast an event
 0.0.5 Reads 'user:pass' from `process.env.OOMPSH_AUTH1` to `...AUTH9`
 0.0.6 Switched from XMLHttpRequest to the Fetch API
+0.0.7 Admin and Enduser both send via POST and listen for SSEs

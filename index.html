@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.6</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.7</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -48,6 +48,16 @@ input {
     border-top: 2px solid #abc;
     border-bottom: 2px solid #def;
 }
+input.valid {
+    background: #ced;
+    border-top: 2px solid #acb;
+    border-bottom: 2px solid #dfe;
+}
+input.invalid {
+    background: #ecd;
+    border-top: 2px solid #cab;
+    border-bottom: 2px solid #fde;
+}
 button {
     background: #ccc;
     border-top: 2px solid #eee;
@@ -64,12 +74,25 @@ button:focus {
 button::-moz-focus-inner {
     border: 0; /* Firefox */
 }
-input#admin-user, input#admin-pass, button {
+input#admin-user, input#admin-pass,
+input#enduser-user, input#enduser-pass,
+button {
     width: 20%;
 }
-pre .local  { color: blue }
-pre .remote { color: black }
-pre .error  { color: red }
+pre {
+    line-height: 2px;
+}
+pre div {
+    padding: 0.2em;
+    margin:0;
+    line-height: 1em;
+}
+pre .client  { background: #eee }
+pre .server  { background: #cde }
+pre .client.error { color: red }
+pre .client.ok    { color: black }
+pre .server.error { color: red }
+pre .server.ok    { color: #16a }
 .hid {
     display: none;
 }
@@ -85,14 +108,12 @@ pre .error  { color: red }
 
 
 
-<!-- HEADER -->
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.0.6</h2><!-- OOMBUMPABLE -->
+<h2>Oompsh 0.0.7</h2><!-- OOMBUMPABLE -->
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
-  <a href="support/demo.html">Demo @TODO</a> &nbsp;
   <a href="https://github.com/loopdotcoop/oompsh">Repo</a> &nbsp;
   <a href="https://www.npmjs.com/package/oompsh">NPM</a> &nbsp;&nbsp;
 </nav>
@@ -102,53 +123,58 @@ pre .error  { color: red }
 
 
 
-<hr>
-<b>Admin Client:</b>
-<br>
-<input  id="admin-url"  placeholder="http://localhost:3000/notify"></input>
-<input  id="admin-user" placeholder="username"></input>
-<input  id="admin-pass" placeholder="password"></input><br>
-<input  id="admin-msg"  placeholder="Message to send"></input>
-<button id="send-btn">Send</button>
-<pre id="admin-log">Loading...</pre>
+<!-- Oompsh utilities, used by the Admin Client and Enduser Client -->
 <script>!function(){
-const
-    $url  = document.querySelector('#admin-url')
-  , $msg  = document.querySelector('#admin-msg')
-  , $user = document.querySelector('#admin-user')
-  , $pass = document.querySelector('#admin-pass')
-  , $send = document.querySelector('#send-btn')
-  , $log  = document.querySelector('#admin-log')
-  , loc = location.href
-  , notify = 'index.html' === loc.slice(-10) ? loc.slice(0,-10) : loc
-let
-    lognum = 1
-  , log = [' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']
-$url.setAttribute('placeholder', -1 === notify.indexOf('localhost')
-  ? 'https://apricot-custard-98918.herokuapp.com/notify' : notify + 'notify'
-)
-$url.value = $url.value || $url.getAttribute('placeholder')
-$send.addEventListener('click', send)
-render('Ready to send')
-function send () {
-    const
-        url  = (  $url.value ||  $url.getAttribute('placeholder') ).trim()
-      , msg  = (  $msg.value ||  $msg.getAttribute('placeholder') ).trim()
-      , user = ( $user.value || $user.getAttribute('placeholder') ).trim()
-      , pass = ( $pass.value || $pass.getAttribute('placeholder') ).trim()
-    if ( 'https://' !== url.slice(0,8) )
-        if ( 'http://localhost:' === url.slice(0,17) )
-            console.warn('http:// is allowed under localhost')
-        else throw Error('URL must begin ‘https://’ (unless localhost)')
-    post(url, user, pass, msg)
-       .then( data => render(data) )
-       .catch(data => render(data) )
+
+//// Global API.
+window.OOMPSH = {
+    logClient: function (data) { log(this, data, 'client') }
+  , logServer: function (data) { log(this, data, 'server') }
+  , post // defined below
+  , connect // defined below
+  , disconnect // defined below
 }
 
-function post(url, user, pass, data) {
-    return fetch(
-        url + '/' + user + ':' + pass  // eg 'http://localhost:1234/notify/j:pw'
-      , {   body: JSON.stringify(data) // must match 'Content-Type' header
+
+//// Updates the log.
+function log ($log, data, source) {
+    const label = data.error ? 'error' : 'ok'
+    const msg   = data.error || data.ok || JSON.stringify(data)
+    $log.lines.unshift('<div class="' + label + ' ' + source + '">'
+      + ('    ' + ++$log.lineTally).slice(-4) + ' ' + msg.trim()
+      + '</div>' )
+    $log.lines = $log.lines.slice(0,10)
+    $log.innerHTML = ''
+      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
+      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
+      + $log.lines.join('\n')
+}//log
+
+
+//// POSTs to a URL and logs the result.
+function post (config) {
+
+    //// Use the `config` object to retrieve variables.
+    const { $domain, $action, $msg, $user, $pass, logClient, logServer } = config
+    let domain = ( $domain.value || $domain.getAttribute('placeholder') ).trim()
+      , action = ( $action.value || $action.getAttribute('placeholder') ).trim()
+      , msg    = (    $msg.value ||    $msg.getAttribute('placeholder') ).trim()
+      , user   = (   $user.value ||   $user.getAttribute('placeholder') ).trim()
+      , pass   = (   $pass.value ||   $pass.getAttribute('placeholder') ).trim()
+    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/notify', and POST body.
+    const url = domain + user + ':' + pass + '/' + action
+    const paranoidUrl = domain + user + ':•••/' + action
+    const body = JSON.stringify({ msg }) // eg '{ "msg":"Here is my message" }'
+
+    //// Log that `post()` has been called. @TODO log invalidation errors too
+    logClient({ ok:`post() will POST ${body} to ${paranoidUrl}` })
+
+    //// Use the (newish) Fetch API to make the POST request.
+    fetch(
+        url
+      , {   body                       // must match 'Content-Type' header
           , method:      'POST'        // *GET, POST, PUT, DELETE, etc.
           , cache:       'no-cache'    // *default, no-cache, reload, force-c...
           , mode:        'cors'        // *same-origin, no-cors, cors
@@ -158,133 +184,216 @@ function post(url, user, pass, data) {
           , headers: {
                 'Content-Type':'application/json'
             }
-    }).then(res => res.json()) // parse response to JSON
-
-/*
-    return new Promise( (resolve, reject) => {
-        const req = new XMLHttpRequest()
-        req.open('POST', url + '/' + user + ':' + pass, true)
-        req.onload = () => 201 === req.status
-          ? resolve(req.response) : reject(req.status + ' ' + req.response)
-        req.onerror = err => {
-            reject('Network Error: ' + JSON.stringify(err))
-            console.log(err);
         }
-        req.send(data)
-    })
-*/
+    ).then(res => res.json()) // parse response to JSON
+     .then( data => logServer(data) )
+     .catch(data => logServer(data) )
+
+}//post()
+
+
+//// Makes an SSE (Server-Sent Events) connection.
+function connect (config) {
+
+    //// Use the `config` object to retrieve variables.
+    const { $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
+    let domain = ( $domain.value || $domain.getAttribute('placeholder') ).trim()
+      , user   = (   $user.value ||   $user.getAttribute('placeholder') ).trim()
+      , pass   = (   $pass.value ||   $pass.getAttribute('placeholder') ).trim()
+    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/connect/enduser'
+    const url = domain + user + ':' + pass + '/connect/' + usertype
+    const paranoidUrl = domain + user + ':•••/connect/' + usertype
+
+    //// Log that `connect()` has been called.
+    if ('admin' !== usertype && 'enduser' !== usertype)
+        return logClient({ error:'Can’t connect: `usertype` invalid' })
+    if (config.es)
+        return logClient({ error:'Can’t connect: EventSource already connected' })
+    if (! window.EventSource)
+        return logClient({ error:'Can’t connect: EventSource not supported' })
+    logClient({ ok:`connect() will connect to ${paranoidUrl}` })
+
+    //// Update the buttons.
+    $connect.className = 'hid'
+    $disconnect.className = ''
+
+    const es = config.es = new EventSource(url)
+    es.addEventListener('message', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data)
+    }, false)
+
+    es.addEventListener('open', evt =>
+        logClient({ ok:'Connection was opened' }), false)
+
+    es.addEventListener('error', evt => {
+        evt = evt.originalTarget || evt // prefer the original error event
+        if (EventSource.CONNECTING === evt.readyState)
+            disconnect(config, 'of an SSE error (readyState is CONNECTING)')
+        else if (EventSource.OPEN === evt.readyState)
+            disconnect(config, 'of an SSE error (readyState is OPEN)')
+        else if (EventSource.CLOSED === evt.readyState)
+            disconnect(config, 'of an SSE error (readyState is CLOSED)')
+        else if (null != evt.readyState)
+            logClient({ error:'Unexpected readyState ' + evt.readyState }) // should not be possible?
+        else
+            logClient({ error:'No evt.readyState: ' + JSON.stringify(evt) })
+    }, false)
+
+    //// Custom events.
+    es.addEventListener('disconnect', evt =>
+        disconnect(config, 'server told me to'), false)
 }
 
-function render (msg, label='local') {
-    if (msg) {
-        if ('object' === typeof msg) {
-            label = msg.error ? 'error' : 'remote'
-            msg = msg.ok || msg.error
-        }
-        log.unshift('<span class="' + label + '">'
-          + ('    ' + lognum++).slice(-4) + ' ' + msg.trim()
-          + '</span>' )
-    }
-    log = log.slice(0,10)
-    $log.innerHTML = ''
-      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
-      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
-      + log.join('<br>\n')
+function disconnect (config, reason="button was clicked") {
+
+    //// Log that `disconnect()` has been called.
+    config.logClient({ ok:'disconnect() called because ' + reason })
+    if (! config.es)
+        return config.logClient({ error:'Can’t disconnect: EventSource is not connected' })
+
+    //// Close the connection and make `es` falsey.
+    config.es.close()
+    config.es = null
+
+    //// Update the buttons.
+    config.$connect.className = ''
+    config.$disconnect.className = 'hid'
 }
+
 
 }()</script>
 
 
 
 
-<hr>
-<b>Events Client:</b><br>
-<input value="post,page" placeholder="types"></input>
-<button id="connect-btn">Connect</button>
-<button id="disconnect-btn" class="hid">Disconnect</button>
-<pre id="events-log">Loading...</pre>
+<!-- Domain, used by the Admin Client and Enduser Client -->
+<label>
+  Domain: <input id="domain" placeholder="Loading..."></input>
+  <span id="domain-comment"></span>
+</label>
 <script>!function(){
-const
-    $input = document.querySelector('input').focus()
-  , $connect = document.querySelector('#connect-btn')
-  , $disconnect = document.querySelector('#disconnect-btn')
-  , $log = document.querySelector('#events-log')
 let
-    es
-  , lognum = 1
-  , log = [' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']
-$connect.addEventListener('click', connect)
-$disconnect.addEventListener('click', disconnect)
-render('Ready to connect')
+    $domain = document.querySelector('#domain')
+  , $domainComment = document.querySelector('#domain-comment')
+  , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
+  , validDomainRx = /^https?:\/\/[-:.a-z0-9]+\/?$/
+  , localDomainRx = /^https?:\/\/(127\.0\.0\.1|localhost)/
+  , pgDomain = ( location.href.match(matchDomainRx) || [])[0]
+  , remoteDomain = 'https://apricot-custard-98918.herokuapp.com'
+  , placeholder = localDomainRx.test(pgDomain) ? pgDomain : remoteDomain
+$domain.addEventListener('input', validateDomain)
+$domain.setAttribute('placeholder', placeholder)
+$domain.value = $domain.value || $domain.getAttribute('placeholder')
+validateDomain()
+function validateDomain () {
+    if (! validDomainRx.test($domain.value) )
+        $domainComment.innerHTML = 'Error: invalid domain'
+    else if ( localDomainRx.test($domain.value) )
+        $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
+          ? '(local SSL server)' : '(local servers don’t have to use https)'
+    else
+        $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
+          ? '(remote SSL server)' : 'Error: Remote servers must use https'
+    $domain.className = 'Error: ' === $domainComment.innerHTML.slice(0,7)
+      ? 'invalid' : 'valid'
+}
+}()</script>
 
-function connect (evt) {
-    if (es)
-        return render('Cannot connect: EventSource already connected')
-    if (! window.EventSource)
-        return render('EventSource not supprted - @TODO resort to Ajax polling')
-    render(evt && 'click' === evt.type
-      ? 'Clicked ‘Connect’' : 'Connected: ' + evt.reason)
 
-    es = new EventSource('events')
-    es.addEventListener('message', evt => {
-        let data
-        try {
-            data = JSON.parse(evt.data)
-        } catch (err) {
-            render('JSON error: ' + err.message, 'error') //; render(e.data)
-            return
-        }
-        if (data)
-            render(data.time + ': ' + data.payload, 'remote')
-        else
-            disconnect({ reason:'no data' }) //@TODO is this right?
-    }, false)
 
-    es.addEventListener('open', evt => render('Connection was opened'), false)
 
-    es.addEventListener('error', evt => {
-        evt = evt.originalTarget || evt // prefer the original error event
-        if (EventSource.CONNECTING === evt.readyState)
-            disconnect({ reason:'evt.readyState is EventSource.CONNECTING' })
-        else if (EventSource.OPEN === evt.readyState)
-            disconnect({ reason:'evt.readyState is EventSource.OPEN' })
-        else if (EventSource.CLOSED === evt.readyState)
-            disconnect({ reason:'evt.readyState is EventSource.CLOSED' })
-        else if (null != evt.readyState)
-            render('Error: Unexpected readyState ' + evt.readyState, 'error') // should not be possible?
-        else
-            render('Error: ' + JSON.stringify(evt), 'error')
-    }, false)
+<!-- Admin Client -->
+<hr>
+<b>Admin Client:</b>
+<br>
+<input  id="admin-action" placeholder="notify"></input>
+<input  id="admin-user"   placeholder="username"></input>
+<input  id="admin-pass"   placeholder="password"></input><br>
+<input  id="admin-msg"    placeholder="Message to send"></input>
+<button id="admin-send">Send</button>
+<button id="admin-connect">Connect</button>
+<button id="admin-disconnect" class="hid">Disconnect</button>
+<pre    id="admin-log">Loading...</pre>
+<script>!function(){
 
-    //// Custom events.
-    es.addEventListener('disconnect', evt => disconnect({ reason:'server told me to' }), false)
-
-    $connect.className = 'hid'
-    $disconnect.className = ''
+//// Initialise the admin config and EventSource object.
+const config = {
+    usertype: 'admin'
+  , es: null
 }
 
-function disconnect (evt) {
-    if (! es)
-        return render('Cannot disconnect: EventSource is not connected')
-    render(evt && 'click' === evt.type
-      ? 'Clicked ‘Disconnect’' : 'Disconnected: ' + evt.reason)
-    es.close()
-    es = null
-    $connect.className = ''
-    $disconnect.className = 'hid'
+//// Add references to the various admin input fields and buttons.
+config.$domain = document.querySelector('#domain')
+'action,msg,user,pass,send,connect,disconnect,log'.split(',')
+   .forEach( name => config['$'+name] = document.querySelector('#admin-'+name) )
+const { $log, $send, $connect, $disconnect } = config
+
+//// Set up admin logging.
+config.logClient = window.OOMPSH.logClient.bind($log)
+config.logServer = window.OOMPSH.logServer.bind($log)
+$log.lineTally = 0
+$log.lines = Array(10).fill('<div>&nbsp;</div>')
+
+//// Log a ready message.
+config.logClient({ ok:'Ready to send' })
+
+//// Set up admin buttons.
+$send.addEventListener( 'click', evt => window.OOMPSH.post(config) )
+$connect.addEventListener( 'click', evt => window.OOMPSH.connect(config) )
+$disconnect.addEventListener( 'click', evt => window.OOMPSH.disconnect(config) )
+
+}()</script>
+
+
+
+
+<!-- Enduser Client -->
+<hr>
+<b>Enduser Client:</b><br>
+<input  id="enduser-action" placeholder="update"></input>
+<input  id="enduser-user"   placeholder="username"></input>
+<input  id="enduser-pass"   placeholder="password"></input><br>
+<input  id="enduser-msg"    placeholder="{ oomid:'abc', { foo:'bar' } }"></input>
+<button id="enduser-send">Send</button>
+<button id="enduser-connect">Connect</button>
+<button id="enduser-disconnect" class="hid">Disconnect</button>
+<pre    id="enduser-log">Loading...</pre>
+
+<script>!function(){
+
+//// Initialise the enduser config and EventSource object.
+const config = {
+    usertype: 'enduser'
+  , es: null
 }
 
-function render (msg, label='local') {
-    if (msg)
-        log.unshift('<span class="' + label + '">'
-          + ('    ' + lognum++).slice(-4) + ' ' + msg.trim()
-          + '</span>' )
-    log = log.slice(0,10)
-    $log.innerHTML = ''
-      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
-      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
-      + log.join('<br>\n')
-}
+//// Add references to the various enduser input fields and buttons.
+config.$domain = document.querySelector('#domain')
+'action,msg,user,pass,send,connect,disconnect,log'.split(',')
+   .forEach( name => config['$'+name] = document.querySelector('#enduser-'+name) )
+const { $log, $send, $connect, $disconnect } = config
+
+//// Set up enduser logging.
+config.logClient = window.OOMPSH.logClient.bind($log)
+config.logServer = window.OOMPSH.logServer.bind($log)
+$log.lineTally = 0
+$log.lines = Array(10).fill('<div>&nbsp;</div>')
+
+//// Log a ready message.
+config.logClient({ ok:'Ready to send' })
+
+//// Set up enduser buttons.
+$send.addEventListener( 'click', evt => window.OOMPSH.post(config) )
+$connect.addEventListener( 'click', evt => window.OOMPSH.connect(config) )
+$disconnect.addEventListener( 'click', evt => window.OOMPSH.disconnect(config) )
 
 }()</script>
 
