@@ -1,9 +1,9 @@
 # Oompsh
 
-#### A Node.js app broadcasting Server-Sent Events in response to a private channel
+#### A Node.js server which adds realtime push notification to Oom apps
 
-+ __Last update:__  2018/04/01 <!-- OOMBUMPABLE -->
-+ __Version:__      0.0.4 <!-- OOMBUMPABLE -->
++ __Last update:__  2018/04/06 <!-- OOMBUMPABLE -->
++ __Version:__      0.0.5 <!-- OOMBUMPABLE -->
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -14,7 +14,7 @@
 
 Oom &nbsp;
 🔅 &nbsp;
-Reactive &nbsp;
+Realtime &nbsp;
 🌟 &nbsp;
 Push &nbsp;
 🎉 &nbsp;
@@ -42,18 +42,16 @@ Designed, developed and authored by Rich Plastow for Loop.Coop.
 
 
 
-## Module
+## App
 
 + __Locales:__
   - English
 + __Software:__
   - Atom
   - Git
-  - Adobe Photoshop
-  - Adobe Illustrator
 + __Languages:__
   - HTML5
   - CSS3
   - JavaScript ES6
-+ __Bundled Dev Dependencies:__
-  - @TODO
++ __Dependencies:__
+  - None!

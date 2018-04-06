@@ -15,9 +15,9 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.4</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.5</title><!-- OOMBUMPABLE -->
 <meta name="description"
-   content="A Node.js app broadcasting Server-Sent Events in response to a private channel">
+   content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
 
 
@@ -26,9 +26,16 @@
 <!-- SCRIPT AND STYLE -->
 
 <style>
-input, pre {
+h2, nav {
+    display: inline-block;
+    margin: 0;
+}
+p {
+    margin: 0;
+}
+input, pre, button {
     width: 100%;
-    padding: 1em;
+    padding: 0.5em 1em;
     box-sizing: border-box;
     border-radius: 0.5em;
     border: none;
@@ -40,6 +47,31 @@ input {
     background: #cde;
     border-top: 2px solid #abc;
     border-bottom: 2px solid #def;
+}
+button {
+    background: #ccc;
+    border-top: 2px solid #eee;
+    border-bottom: 2px solid #bbb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+button:hover {
+    background: #ddd;
+}
+button:focus {
+    background: #bbb;
+}
+button::-moz-focus-inner {
+    border: 0; /* Firefox */
+}
+input#admin-user, input#admin-pass, button {
+    width: 20%;
+}
+pre .local  { color: blue }
+pre .remote { color: black }
+pre .error  { color: red }
+.hid {
+    display: none;
 }
 </style>
 
@@ -56,8 +88,8 @@ input {
 <!-- HEADER -->
 
 <!-- Header and Navigation menu -->
-<h1>Oompsh 0.0.4</h1><!-- OOMBUMPABLE -->
-<nav>
+<h2>Oompsh 0.0.5</h2><!-- OOMBUMPABLE -->
+<nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
   <a href="support/demo.html">Demo @TODO</a> &nbsp;
@@ -65,50 +97,76 @@ input {
   <a href="https://www.npmjs.com/package/oompsh">NPM</a> &nbsp;&nbsp;
 </nav>
 
-<h2>A Node.js app broadcasting Server-Sent Events in response to a private channel</h2>
+<p>A Node.js server which adds realtime push notification to Oom apps</p>
 
 
 
 
 <hr>
-<h4>Notify Client Example:</h4>
-<input  id="broadcast-url" placeholder="http://localhost:3000/notify"></input><br>
-<input  id="broadcast-msg" placeholder="Message to send"></input>
-<button id="broadcast-btn">Broadcast</button>
+<b>Admin Client:</b>
+<br>
+<input  id="admin-url"  placeholder="http://localhost:3000/notify"></input>
+<input  id="admin-user" placeholder="username"></input>
+<input  id="admin-pass" placeholder="password"></input><br>
+<input  id="admin-msg"  placeholder="Message to send"></input>
+<button id="send-btn">Send</button>
+<pre id="admin-log">Loading...</pre>
 <script>!function(){
 const
-    $url = document.querySelector('#broadcast-url')
-  , $msg = document.querySelector('#broadcast-msg')
-  , $btn = document.querySelector('#broadcast-btn')
+    $url  = document.querySelector('#admin-url')
+  , $msg  = document.querySelector('#admin-msg')
+  , $user = document.querySelector('#admin-user')
+  , $pass = document.querySelector('#admin-pass')
+  , $send = document.querySelector('#send-btn')
+  , $log  = document.querySelector('#admin-log')
   , loc = location.href
   , notify = 'index.html' === loc.slice(-10) ? loc.slice(0,-10) : loc
+let
+    lognum = 1
+  , log = [' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']
 $url.setAttribute('placeholder', -1 === notify.indexOf('localhost')
   ? 'https://apricot-custard-98918.herokuapp.com/notify' : notify + 'notify'
 )
-document.querySelector('#broadcast-btn').addEventListener('click', broadcast)
-function broadcast () {
+$url.value = $url.value || $url.getAttribute('placeholder')
+$send.addEventListener('click', send)
+render('Ready to send')
+function send () {
     const
-        url = $url.value || $url.getAttribute('placeholder')
-      , msg = $msg.value || $msg.getAttribute('placeholder')
-    post(url, msg)
-       .then( data => {
-           console.log('ok!', data);
-        })
-       .catch( err => {
-           console.log('oh no!', err);
-        })
+        url  = (  $url.value ||  $url.getAttribute('placeholder') ).trim()
+      , msg  = (  $msg.value ||  $msg.getAttribute('placeholder') ).trim()
+      , user = ( $user.value || $user.getAttribute('placeholder') ).trim()
+      , pass = ( $pass.value || $pass.getAttribute('placeholder') ).trim()
+    if ( 'https://' !== url.slice(0,8) )
+        if ( 'http://localhost:' === url.slice(0,17) )
+            console.warn('http:// is allowed under localhost')
+        else throw Error('URL must begin ‘https://’ (unless localhost)')
+    post(url, user, pass, msg)
+       .then( data => render(data, 'remote') )
+       .catch( err => render('Error: ' + err, 'error') )
 }
 
-function post(url, data) {
+function post(url, user, pass, data) {
     return new Promise( (resolve, reject) => {
         const req = new XMLHttpRequest()
-        req.open('POST', url, true)
-        req.onload = () => 200 === req.status
-          ? resolve(req.response) : reject( Error(req.statusText) )
-        req.onerror = e =>
-            reject( Error(`Network Error: ${e}`) )
+        req.open('POST', url + '/' + user + ':' + pass, true)
+        req.onload = () => 201 === req.status
+          ? resolve(req.response) : reject(req.status + ' ' + req.response)
+        req.onerror = err =>
+            reject('Network Error: ' + JSON.stringify(err))
         req.send(data)
     })
+}
+
+function render (msg, label='local') {
+    if (msg)
+        log.unshift('<span class="' + label + '">'
+          + ('    ' + lognum++).slice(-4) + ' ' + msg.trim()
+          + '</span>' )
+    log = log.slice(0,10)
+    $log.innerHTML = ''
+      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
+      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
+      + log.join('<br>\n')
 }
 
 }()</script>
@@ -117,50 +175,89 @@ function post(url, data) {
 
 
 <hr>
-<h4>Events Client Example:</h4>
+<b>Events Client:</b><br>
 <input value="post,page" placeholder="types"></input>
-<pre>Loading...</pre>
+<button id="connect-btn">Connect</button>
+<button id="disconnect-btn" class="hid">Disconnect</button>
+<pre id="events-log">Loading...</pre>
 <script>!function(){
 const
     $input = document.querySelector('input').focus()
-  , $pre = document.querySelector('pre')
-  , log = []
+  , $connect = document.querySelector('#connect-btn')
+  , $disconnect = document.querySelector('#disconnect-btn')
+  , $log = document.querySelector('#events-log')
+let
+    es
+  , lognum = 1
+  , log = [' ',' ',' ',' ',' ',' ',' ',' ',' ',' ']
+$connect.addEventListener('click', connect)
+$disconnect.addEventListener('click', disconnect)
+render('Ready to connect')
 
-if (! window.EventSource) {
-    log.push('EventSource not supprted - @TODO resort to Ajax polling')
-    render()
-} else {
-    const events = new EventSource('events')
-    events.addEventListener('message', function(e) {
+function connect (evt) {
+    if (es)
+        return render('Cannot connect: EventSource already connected')
+    if (! window.EventSource)
+        return render('EventSource not supprted - @TODO resort to Ajax polling')
+    render(evt && 'click' === evt.type
+      ? 'Clicked ‘Connect’' : 'Connected: ' + evt.reason)
+
+    es = new EventSource('events')
+    es.addEventListener('message', evt => {
         let data
         try {
-            data = JSON.parse(e.data)
+            data = JSON.parse(evt.data)
         } catch (err) {
-            log.push('JSON error: ' + err.message)
-            log.push(e.data); render()
+            render('JSON error: ' + err.message, 'error') //; render(e.data)
+            return
         }
-        if (data) {
-            log.push(data.time + ': ' + data.payload); render()
-        } else {
-            events.close()
-        }
+        if (data)
+            render(data.time + ': ' + data.payload, 'remote')
+        else
+            disconnect({ reason:'no data' }) //@TODO is this right?
     }, false)
 
-    events.addEventListener('open', function(e) {
-        log.push('Connection was opened'); render()
+    es.addEventListener('open', evt => render('Connection was opened'), false)
+
+    es.addEventListener('error', evt => {
+        evt = evt.originalTarget || evt // prefer the original error event
+        if (EventSource.CONNECTING === evt.readyState)
+            disconnect({ reason:'evt.readyState is EventSource.CONNECTING' })
+        else if (EventSource.OPEN === evt.readyState)
+            disconnect({ reason:'evt.readyState is EventSource.OPEN' })
+        else if (EventSource.CLOSED === evt.readyState)
+            disconnect({ reason:'evt.readyState is EventSource.CLOSED' })
+        else if (null != evt.readyState)
+            render('Error: Unexpected readyState ' + evt.readyState, 'error') // should not be possible?
+        else
+            render('Error: ' + JSON.stringify(evt), 'error')
     }, false)
 
-    events.addEventListener('error', function(e) {
-        if (EventSource.CLOSED === e.readyState) {
-            log.push('Connection was closed'); render()
-        } else {
-            log.push('Error: readyState ' + e.readyState); render()
-        }
-    }, false)
+    //// Custom events.
+    es.addEventListener('disconnect', evt => disconnect({ reason:'server told me to' }), false)
+
+    $connect.className = 'hid'
+    $disconnect.className = ''
 }
 
-function render () {
-    $pre.innerHTML = ''
+function disconnect (evt) {
+    if (! es)
+        return render('Cannot disconnect: EventSource is not connected')
+    render(evt && 'click' === evt.type
+      ? 'Clicked ‘Disconnect’' : 'Disconnected: ' + evt.reason)
+    es.close()
+    es = null
+    $connect.className = ''
+    $disconnect.className = 'hid'
+}
+
+function render (msg, label='local') {
+    if (msg)
+        log.unshift('<span class="' + label + '">'
+          + ('    ' + lognum++).slice(-4) + ' ' + msg.trim()
+          + '</span>' )
+    log = log.slice(0,10)
+    $log.innerHTML = ''
       // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
       // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
       + log.join('<br>\n')

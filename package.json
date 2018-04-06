@@ -1,7 +1,7 @@
 {
   "name": "oompsh",
-  "version": "0.0.4",
-  "description": "A Node.js app broadcasting Server-Sent Events in response to a private channel",
+  "version": "0.0.5",
+  "description": "A Node.js server which adds realtime push notification to Oom apps",
   "main": "oompsh.js",
   "engines": {
     "node": "8.9.4"
@@ -22,7 +22,7 @@
   },
   "keywords": [
     "Oom",
-    "Reactive",
+    "Realtime",
     "Push",
     "Server-Sent Events"
   ],
