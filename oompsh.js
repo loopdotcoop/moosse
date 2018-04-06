@@ -18,12 +18,15 @@ function server (req, res) {
     //// Set our default headers. Note that 'Content-Type' will be overridden
     //// for '/' and '/index.html', or for an SSE connection.
     res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    // res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Content-Length')
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('Cache-Control', 'no-cache') // anything might change any time
 
     //// Deal with the request depending on its method.
-    if ('GET'  === req.method) return serveGET(req, res)
-    if ('POST' === req.method) return servePOST(req, res)
+    if ('OPTIONS' === req.method) return res.writeHead(200)
+    if ('GET'     === req.method) return serveGET(req, res)
+    if ('POST'    === req.method) return servePOST(req, res)
     res.writeHead(405)
     res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
