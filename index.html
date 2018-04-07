@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.1</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.1.2</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -91,6 +91,9 @@ input.invalid {
     border-top: 2px solid #cab;
     border-bottom: 2px solid #fde;
 }
+input#apiv {
+    width: 3.5em;
+}
 .shortcuts button {
     width: 18em;
 }
@@ -142,7 +145,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.1</h2><!-- OOMBUMPABLE -->
+<h2>Oompsh 0.1.2</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -213,8 +216,9 @@ function sanitize (text) {
 function send (config) {
 
     //// Use the `config` object to retrieve variables.
-    const { $domain, $method, $user, $pass, $action, $target, $body, logClient, logServer } = config
-    let domain   = $domain.value.trim()
+    const { $apiv, $domain, $method, $user, $pass, $action, $target, $body, logClient, logServer } = config
+    let apiv     =   $apiv.value.trim()
+      , domain   = $domain.value.trim()
       , method   = $method.value.trim()
       , action   = $action.value.trim()
       , target   = $target.value.trim()
@@ -222,15 +226,16 @@ function send (config) {
       , bodyLog  = body ? sanitize(body) + ' to ' : ''
       , user     =   $user.value.trim()
       , pass     =   $pass.value.trim()
-      , userpass = user || pass ? '/' + user + ':' + pass : ''
-      , paranoid = user || pass ? '/' + user + ':' + (pass?'•••':'') : ''
-    domain = /\/$/.test(domain) ? domain.slice(0,-1) : domain // no trailing ‘/’
-    action = action ? '/' + action : '' // allow a blank ‘action’
-    target = target ? '/' + target : '' // allow a blank ‘target’
+      , userpass = user || pass ? user + ':' + pass + '/' : ''
+      , paranoid = user || pass ? user + ':' + (pass?'•'.repeat(pass.length):'') + '/' : ''
+    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+    apiv += '/' // append a slash
+    action = action ? action + '/' : '[action]/' // don’t allow a blank ‘action’
+    target = target ? target + '/' : '' // allow a blank ‘target’
 
     //// Build the URL, eg 'http://localhost:1234/jo:pw/notify'.
-    const url         = domain + userpass + action + target
-    const paranoidUrl = domain + paranoid + action + target
+    const url         = (domain + apiv + userpass + action + target).slice(0,-1)
+    const paranoidUrl = (domain + apiv + paranoid + action + target).slice(0,-1)
 
     const init = 'GET' === method
       ? {   method                     // *GET, POST, PUT, DELETE, etc.
@@ -266,15 +271,17 @@ function send (config) {
 function connect (config) {
 
     //// Use the `config` object to retrieve variables.
-    const { $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
-    let domain = ( $domain.value || $domain.getAttribute('placeholder') ).trim()
+    const { $apiv, $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
+    let apiv   = (   $apiv.value ||   $apiv.getAttribute('placeholder') ).trim()
+      , domain = ( $domain.value || $domain.getAttribute('placeholder') ).trim()
       , user   = (   $user.value ||   $user.getAttribute('placeholder') ).trim()
       , pass   = (   $pass.value ||   $pass.getAttribute('placeholder') ).trim()
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+    apiv += '/' // append a slash
 
     //// Build the URL, eg 'http://localhost:1234/jo:pw/connect/enduser'
-    const url = domain + user + ':' + pass + '/connect/' + usertype
-    const paranoidUrl = domain + user + ':•••/connect/' + usertype
+    const url         = domain + apiv + user + ':' + pass + '/connect/' + usertype
+    const paranoidUrl = domain + apiv + user + ':' + '•'.repeat(pass.length) + '/connect/' + usertype
 
     //// Log that `connect()` has been called.
     if ('admin' !== usertype && 'enduser' !== usertype)
@@ -344,14 +351,14 @@ function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
 
 
 
-<!-- Domain, used by the Admin Client and Enduser Client -->
-<label>
-  Domain: <input id="domain" placeholder="Loading..."></input>
-  <span id="domain-comment"></span>
-</label>
+<!-- API Version and Domain, used by the Admin Client and Enduser Client -->
+<input id="apiv" placeholder="v0"></input>
+<input id="domain" placeholder="Loading..."></input>
+<span id="domain-comment"></span>
 <script>!function(){
 let
-    $domain = document.querySelector('#domain')
+    $apiv   = document.querySelector('#apiv')
+  , $domain = document.querySelector('#domain')
   , $domainComment = document.querySelector('#domain-comment')
   , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
   , validDomainRx = /^https?:\/\/[-:.a-z0-9]+\/?$/
@@ -375,6 +382,13 @@ function validateDomain () {
     $domain.className = 'Error: ' === $domainComment.innerHTML.slice(0,7)
       ? 'invalid' : 'valid'
 }
+$apiv.value = $apiv.value || $apiv.getAttribute('placeholder')
+$apiv.addEventListener('input', validateApiv)
+validateApiv()
+function validateApiv () {
+    $apiv.className = /^v\d+$/.test( $apiv.value.trim() ) ? 'valid' : 'invalid'
+}
+
 }()</script>
 
 
@@ -425,6 +439,7 @@ const
 
 //// Add references to the various admin input fields and buttons in config.
 //// Also, set up validation on inputs.
+config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
@@ -514,6 +529,7 @@ const
 
 //// Add references to the various enduser input fields and buttons in config.
 //// Also, set up validation on inputs.
+config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
@@ -554,52 +570,6 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
 })
 }()</script>
 
-
-
-
-<!-- Enduser Client -->
-<!--
-<hr>
-<b>Enduser Client:</b><br>
-<input  id="enduser-action" placeholder="update"></input>
-<input  id="enduser-user"   placeholder="username"></input>
-<input  id="enduser-pass"   placeholder="password"></input><br>
-<input  id="enduser-body"   placeholder="{ oomid:'abc', { foo:'bar' } }"></input>
-<button id="enduser-send">Send</button>
-<button id="enduser-connect">Connect</button>
-<button id="enduser-disconnect" class="hid">Disconnect</button>
-<pre    id="enduser-log">Loading...</pre>
-
-<script>!function(){
-
-//// Initialise the enduser config and EventSource object.
-const config = {
-    usertype: 'enduser'
-  , es: null
-}
-
-//// Add references to the various enduser input fields and buttons.
-config.$domain = document.querySelector('#domain')
-'action,body,user,pass,send,connect,disconnect,log'.split(',')
-   .forEach( name => config['$'+name] = document.querySelector('#enduser-'+name) )
-const { $log, $send, $connect, $disconnect } = config
-
-//// Set up enduser logging.
-config.logClient = window.OOMPSH.logClient.bind($log)
-config.logServer = window.OOMPSH.logServer.bind($log)
-$log.lineTally = 0
-$log.lines = Array(10).fill('<div>&nbsp;</div>')
-
-//// Log a ready message.
-config.logClient({ ok:'Ready to send' })
-
-//// Set up enduser buttons.
-$send.addEventListener( 'click', evt => window.OOMPSH.send(config) )
-$connect.addEventListener( 'click', evt => window.OOMPSH.connect(config) )
-$disconnect.addEventListener( 'click', evt => window.OOMPSH.disconnect(config) )
-
-}()</script>
--->
 
 
 

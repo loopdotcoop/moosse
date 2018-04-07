@@ -2,8 +2,8 @@
 
 #### A Node.js server which adds realtime push notification to Oom apps
 
-+ __Last update:__  2018/04/06 <!-- OOMBUMPABLE -->
-+ __Version:__      0.1.1 <!-- OOMBUMPABLE -->
++ __Last update:__  2018/04/06
++ __Version:__      0.1.2
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;

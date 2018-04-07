@@ -2,7 +2,9 @@ let
     vvv = false // very very verbose logging
   , vv = vvv || true // very verbose logging (always true if `vvv` is true)
 const
-    first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
+    VERSION = '0.1.2' // the major part of this is also the API version, `apiv`
+  , APIV = 'v' + VERSION.split('.')[0]
+  , first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
   , credentialsRx = new RegExp(`^${first}${other}{0,64}:${first}${other}{0,64}$`)
   , eventClients = []
@@ -15,30 +17,35 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 //// Serve the proper response.
 function server (req, res) {
 
-    //// Serve a file. Any URL ending '.z7' or '.wxyz' is treated as a file.
-    if ('GET' === req.method && /^\/$|\.[a-z0-9]{2,4}$/.test(req.url) )
+    //// Any GET request to a URL not beginning '/v123/' is a static file.
+    if ('GET' === req.method && ! /^\/v\d+\//.test(req.url) )
         return serveFile(req, res)
 
     //// Set default headers. Note that 'Content-Type' will be overridden for
     //// an SSE connection or an OPTIONS request.
+    res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Cache-Control', 'no-cache') // anything might change any time
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept') //@TODO cull this list to the minimum
-    res.setHeader('Content-Type', 'application/json')
-    res.setHeader('Cache-Control', 'no-cache') // anything might change any time
 
-    //// Parse the three standard parts of the URL.
-    let parts = req.url.slice(1).split('/')
-    if (1 === parts.length)
-        parts = [ null, parts[0], null ] // eg 'https://example.com/version'
-    else if ( 2 === parts.length && ! /:/.test(parts[0]) )
-        parts = [ null, parts[0], parts[1] ] // eg 'https://a.com/action/target'
-    const [ credentials, action, target ] = parts
+    //// Parse the four standard parts of the URL.
+    const
+        parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
+      , apiv   = /^v\d+$/.test(parts[0])      ? parts[0] : null // mandatory 1st
+      , creds  = credentialsRx.test(parts[1]) ? parts[1] : null // optional 2nd
+      , action = creds ? parts[2] : parts[1] // mandatory, 2nd or 3rd
+      , target = creds ? parts[3] : parts[2] // optional, 3rd or 4th
+    //// Make sure the request API version matches this script’s API version.
+    if (apiv !== APIV) {
+        res.writeHead(501)
+        return res.end('{ "error":"NOT IMPLEMENTED: Wrong API version" }\n')
+    }
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, credentials, action, target) //@TODO remove this, if it doesn’t help CORS
-    if ('GET'     === req.method) return     serveGET(req, res, credentials, action, target)
-    if ('POST'    === req.method) return    servePOST(req, res, credentials, action, target)
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, creds, action, target) //@TODO remove this, if it doesn’t help CORS
+    if ('GET'     === req.method) return     serveGET(req, res, creds, action, target)
+    if ('POST'    === req.method) return    servePOST(req, res, creds, action, target)
     res.writeHead(405)
     res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
@@ -73,7 +80,7 @@ function serveGET (req, res, credentials, action, target) {
     //// A version request.
     if ('version' === action) {
         res.writeHead(200)
-        res.end('{ "ok":"Oompsh ' + require('./package.json').version + '" }\n')
+        res.end('{ "ok":"Oompsh ' + VERSION + '" }\n')
     }
 
     //// A request to start listening for Server-Sent Events.
