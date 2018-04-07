@@ -16,7 +16,7 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 function server (req, res) {
 
     //// Serve a file. Any URL ending '.z7' or '.wxyz' is treated as a file.
-    if ('/' === req.url || /\.[a-z0-9]{2,4}$/.test(req.url) )
+    if ('GET' === req.method && /^\/$|\.[a-z0-9]{2,4}$/.test(req.url) )
         return serveFile(req, res)
 
     //// Set default headers. Note that 'Content-Type' will be overridden for
@@ -24,7 +24,7 @@ function server (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json')
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
     // res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Content-Length')
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('Cache-Control', 'no-cache') // anything might change any time
