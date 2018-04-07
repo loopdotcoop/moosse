@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.0.8</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.0.9</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -142,7 +142,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.0.8</h2><!-- OOMBUMPABLE -->
+<h2>Oompsh 0.0.9</h2><!-- OOMBUMPABLE -->
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -244,7 +244,7 @@ function send (config) {
           , mode:        'cors'        // *same-origin, no-cors, cors
           , redirect:    'error'       // *manual, follow, error
           , referrer:    'no-referrer' // *client, no-referrer
-          , credentials: 'include'     // *omit, include, same-origin @TODO omit?
+          , credentials: 'omit'        // *omit, include, same-origin @TODO omit?
           , body                       // must match 'Content-Type' header
           , headers: {
                 'Content-Type':'application/json'

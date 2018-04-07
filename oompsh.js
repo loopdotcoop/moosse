@@ -20,7 +20,7 @@ function server (req, res) {
         return serveFile(req, res)
 
     //// Set default headers. Note that 'Content-Type' will be overridden for
-    //// an SSE connection.
+    //// an SSE connection or an OPTIONS request.
     res.setHeader('Access-Control-Allow-Origin', '*')
     // res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
@@ -66,7 +66,7 @@ function serveFile (req, res) {
 //// Serve an OPTIONS request.
 function serveOPTIONS (req, res, userpass, action, target) {
     res.writeHead(200, {'Content-Type': 'text/html'})
-    res.end('yup\n')
+    res.end('You’re probably a CORS preflight\n')
 }
 
 //// Serve a GET request.
