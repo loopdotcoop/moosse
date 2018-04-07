@@ -4,9 +4,9 @@ let
 const
     first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
-  , userpassRx = new RegExp(`^${first}${other}{0,64}:${first}${other}{0,64}$`)
+  , credentialsRx = new RegExp(`^${first}${other}{0,64}:${first}${other}{0,64}$`)
   , eventClients = []
-  , auths = getAuths()
+  , adminCredentials = getAdminCredentials()
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
 app.listen( port, () => console.log(`App is listening on port ${port}`) )
@@ -22,10 +22,8 @@ function server (req, res) {
     //// Set default headers. Note that 'Content-Type' will be overridden for
     //// an SSE connection or an OPTIONS request.
     res.setHeader('Access-Control-Allow-Origin', '*')
-    // res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
-    // res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Content-Length')
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept') //@TODO cull this list to the minimum
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('Cache-Control', 'no-cache') // anything might change any time
 
@@ -35,12 +33,12 @@ function server (req, res) {
         parts = [ null, parts[0], null ] // eg 'https://example.com/version'
     else if ( 2 === parts.length && ! /:/.test(parts[0]) )
         parts = [ null, parts[0], parts[1] ] // eg 'https://a.com/action/target'
-    const [ userpass, action, target ] = parts
+    const [ credentials, action, target ] = parts
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, userpass, action, target) //@TODO remove this, if it doesn’t help CORS
-    if ('GET'     === req.method) return     serveGET(req, res, userpass, action, target)
-    if ('POST'    === req.method) return    servePOST(req, res, userpass, action, target)
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, credentials, action, target) //@TODO remove this, if it doesn’t help CORS
+    if ('GET'     === req.method) return     serveGET(req, res, credentials, action, target)
+    if ('POST'    === req.method) return    servePOST(req, res, credentials, action, target)
     res.writeHead(405)
     res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
@@ -64,13 +62,13 @@ function serveFile (req, res) {
 }
 
 //// Serve an OPTIONS request.
-function serveOPTIONS (req, res, userpass, action, target) {
+function serveOPTIONS (req, res, credentials, action, target) {
     res.writeHead(200, {'Content-Type': 'text/html'})
     res.end('You’re probably a CORS preflight\n')
 }
 
 //// Serve a GET request.
-function serveGET (req, res, userpass, action, target) {
+function serveGET (req, res, credentials, action, target) {
 
     //// A version request.
     if ('version' === action) {
@@ -102,16 +100,16 @@ function serveGET (req, res, userpass, action, target) {
 
 
 //// Serve a POST request.
-function servePOST (req, res, userpass, action, target) {
+function servePOST (req, res, credentials, action, target) {
 
     //// Authenticate credentials.
-    if (! userpass) {
+    if (! credentials) {
         res.writeHead(401)
         res.end('{ "error":"UNAUTHORIZED: Needs username:password" }\n')
-    } else if (! userpassRx.test(userpass) ) {
+    } else if (! credentialsRx.test(credentials) ) {
         res.writeHead(401)
         res.end('{ "error":"UNAUTHORIZED: Invalid username:password" }\n')
-    } else if (! auths[userpass] ) {
+    } else if (! adminCredentials[credentials] ) {
         res.writeHead(401)
         res.end('{ "error":"UNAUTHORIZED: Unrecognised username:password" }\n')
     }
@@ -191,17 +189,17 @@ function vvok  (fnName, msg) { if (vv)  ok(new Date()+` ${fnName}()\n  `+msg) }
 function vvvok (fnName, msg) { if (vvv) ok(new Date()+` ${fnName}()\n  `+msg) }
 function oops (msg) { console.error(msg) }
 
-function getAuths () {
-    const auths = {}
-    for (let i=0; i<10; i++) { // OOMPSH_AUTH0 to OOMPSH_AUTH9
-        const auth = process.env['OOMPSH_AUTH'+i]
-        if (! auth) continue
-        //@TODO valid-looking user and pass?
-        auths[auth] = 'from $OOMPSH_AUTH' + i
-    }
-    if (! Object.keys(auths).length)
-        throw Error('Try $ export OOMPSH_AUTH0=my-user:my-pass')
-    return auths
+function getAdminCredentials () {
+    const out = {}
+    let errs = [], envCreds = process.env.OOMPSH_ADMIN_CREDENTIALS
+    if (! envCreds)
+        throw Error('Try `$ export OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
+    envCreds = envCreds.split(',')
+    envCreds.forEach( (ec, i) => {
+        if (! credentialsRx.test(ec) ) errs.push(i); else out[ec] = 1 } )
+    if (errs.length)
+        throw Error('Invalid OOMPSH_ADMIN_CREDENTIALS at index ' + errs)
+    return out
 }
 
 function broadcast (payload, eventName=null) {
