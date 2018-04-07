@@ -15,8 +15,9 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 //// Serve the proper response.
 function server (req, res) {
 
-    //// Serve a top-level file.
-    if ( 0 > req.url.slice(1).indexOf('/') ) return serveFile(req, res)
+    //// Serve a file. Any URL ending '.z7' or '.wxyz' is treated as a file.
+    if ('/' === req.url || /\.[a-z0-9]{2,4}$/.test(req.url) )
+        return serveFile(req, res)
 
     //// Set default headers. Note that 'Content-Type' will be overridden for
     //// an SSE connection.
@@ -29,10 +30,15 @@ function server (req, res) {
     res.setHeader('Cache-Control', 'no-cache') // anything might change any time
 
     //// Parse the three standard parts of the URL.
-    const [ userpass, action, target ] = req.url.slice(1).split('/')
+    let parts = req.url.slice(1).split('/')
+    if (1 === parts.length)
+        parts = [ null, parts[0], null ] // eg 'https://example.com/version'
+    else if ( 2 === parts.length && ! /:/.test(parts[0]) )
+        parts = [ null, parts[0], parts[1] ] // eg 'https://a.com/action/target'
+    const [ userpass, action, target ] = parts
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return res.writeHead(200) //@TODO remove this?
+    if ('OPTIONS' === req.method) return res.writeHead(200) //@TODO remove this, if it doesn’t help CORS
     if ('GET'     === req.method) return  serveGET(req, res, userpass, action, target)
     if ('POST'    === req.method) return servePOST(req, res, userpass, action, target)
     res.writeHead(405)
@@ -93,7 +99,10 @@ function serveGET (req, res, userpass, action, target) {
 function servePOST (req, res, userpass, action, target) {
 
     //// Authenticate credentials.
-    if (! userpassRx.test(userpass) ) {
+    if (! userpass) {
+        res.writeHead(401)
+        res.end('{ "error":"UNAUTHORIZED: Needs username:password" }\n')
+    } else if (! userpassRx.test(userpass) ) {
         res.writeHead(401)
         res.end('{ "error":"UNAUTHORIZED: Invalid username:password" }\n')
     } else if (! auths[userpass] ) {
@@ -132,8 +141,9 @@ function servePOST (req, res, userpass, action, target) {
         req.on( 'data', chunk => data.push(chunk) )
            .on( 'end', () => {
                 data = Buffer.concat(data).toString()
+                data = JSON.parse(data) //@TODO deal with malformed JSON
+                const tally = broadcast(data.message)
                 res.writeHead(201)
-                const tally = broadcast(data)
                 res.end('{ "ok":"Broadcast to ' + tally + ' enduser(s)" }\n')
            })
     }
