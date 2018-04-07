@@ -38,7 +38,7 @@ function server (req, res) {
     const [ userpass, action, target ] = parts
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return res.writeHead(200) //@TODO remove this, if it doesn’t help CORS
+    if ('OPTIONS' === req.method) return res.writeHead(200, {'Content-Type': 'text/html'}) //@TODO remove this, if it doesn’t help CORS
     if ('GET'     === req.method) return  serveGET(req, res, userpass, action, target)
     if ('POST'    === req.method) return servePOST(req, res, userpass, action, target)
     res.writeHead(405)
