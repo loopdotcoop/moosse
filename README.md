@@ -3,7 +3,7 @@
 #### A Node.js server which adds realtime push notification to Oom apps
 
 + __Last update:__  2018/04/06 <!-- OOMBUMPABLE -->
-+ __Version:__      0.1.0 <!-- OOMBUMPABLE -->
++ __Version:__      0.1.1 <!-- OOMBUMPABLE -->
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -71,5 +71,5 @@ You can define any number of admin credentials this way, eg:
 `$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass,pat:foobar`  
 Note that oompsh.js throws an error on startup if any credentials are invalid.
 
-After each new `$ git commit` and `$ git push`, you should redeploy the app:  
+After each `$ git commit` and `$ git push`, you should redeploy the app:  
 `$ git push heroku master`

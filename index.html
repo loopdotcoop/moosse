@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.0</title><!-- OOMBUMPABLE -->
+<title>Oompsh 0.1.1</title><!-- OOMBUMPABLE -->
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -142,7 +142,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.0</h2><!-- OOMBUMPABLE -->
+<h2>Oompsh 0.1.1</h2><!-- OOMBUMPABLE -->
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -357,7 +357,7 @@ let
   , validDomainRx = /^https?:\/\/[-:.a-z0-9]+\/?$/
   , localDomainRx = /^https?:\/\/(127\.0\.0\.1|localhost)/
   , pgDomain = ( location.href.match(matchDomainRx) || [])[0]
-  , remoteDomain = 'https://apricot-custard-98918.herokuapp.com'
+  , remoteDomain = 'https://oompsh.herokuapp.com'
   , placeholder = localDomainRx.test(pgDomain) ? pgDomain : remoteDomain
 $domain.setAttribute('placeholder', placeholder)
 $domain.value = $domain.value || $domain.getAttribute('placeholder')

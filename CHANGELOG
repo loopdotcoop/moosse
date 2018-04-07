@@ -10,3 +10,5 @@
 0.0.8 Various UI improvements
 0.0.9 Fix CORS: omit Fetch credentials, end OPTIONS requests
 0.1.0 Replace OOMPSH_AUTH0 etc with OOMPSH_ADMIN_CREDENTIALS
+0.1.1 Rename the demo Heroku app ‘https://oompsh.herokuapp.com’
+0.1.2 Prefix API URLs with ‘v0/’
