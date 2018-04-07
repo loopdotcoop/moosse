@@ -38,9 +38,9 @@ function server (req, res) {
     const [ userpass, action, target ] = parts
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return res.writeHead(200, {'Content-Type': 'text/html'}) //@TODO remove this, if it doesn’t help CORS
-    if ('GET'     === req.method) return  serveGET(req, res, userpass, action, target)
-    if ('POST'    === req.method) return servePOST(req, res, userpass, action, target)
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, userpass, action, target) //@TODO remove this, if it doesn’t help CORS
+    if ('GET'     === req.method) return     serveGET(req, res, userpass, action, target)
+    if ('POST'    === req.method) return    servePOST(req, res, userpass, action, target)
     res.writeHead(405)
     res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
 }
@@ -61,6 +61,12 @@ function serveFile (req, res) {
         res.end('NOT FOUND: See docs, http://oompsh.loop.coop/\n')
     }
 
+}
+
+//// Serve an OPTIONS request.
+function serveOPTIONS (req, res, userpass, action, target) {
+    res.writeHead(200, {'Content-Type': 'text/html'})
+    res.end('yup\n')
 }
 
 //// Serve a GET request.
