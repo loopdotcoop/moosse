@@ -2,7 +2,7 @@ let
     vvv = false // very very verbose logging
   , vv = vvv || true // very verbose logging (always true if `vvv` is true)
 const
-    VERSION = '0.1.2' // the major part of this is also the API version, `apiv`
+    VERSION = '0.1.3' // the major part of this is also the API version, `apiv`
   , APIV = 'v' + VERSION.split('.')[0]
   , first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
@@ -14,11 +14,17 @@ const
 app.listen( port, () => console.log(`App is listening on port ${port}`) )
 
 
+//// Send a ‘heartbeat’ to all SSE clients, once every 10 seconds.
+setInterval ( () => {
+    eventClients.forEach( res => res.write(':tick\n') )
+}, 10000)
+
+
 //// Serve the proper response.
 function server (req, res) {
 
     //// Any GET request to a URL not beginning '/v123/' is a static file.
-    if ('GET' === req.method && ! /^\/v\d+\//.test(req.url) )
+    if ('GET' === req.method && ! /^\/v\d+\/|^\/v\d+$/.test(req.url) )
         return serveFile(req, res)
 
     //// Set default headers. Note that 'Content-Type' will be overridden for
@@ -209,18 +215,6 @@ function getAdminCredentials () {
     return out
 }
 
-function broadcast (payload, eventName=null) {
-    let tally = 0
-    eventClients.forEach( res => {
-        sendSSE( res, 'broadcast', {
-            time: (new Date()).toLocaleTimeString()
-          , ok: payload
-        }, eventName)
-        tally++
-    })
-    return tally
-}
-
 function beginSSE (req, res) {
     res.writeHead(200, {
         'Content-Type':  'text/event-stream' // override JSON
@@ -236,6 +230,19 @@ function beginSSE (req, res) {
         time: (new Date()).toLocaleTimeString()
       , ok: 'SSE session has begun'
     })
+}
+
+
+function broadcast (payload, eventName=null) {
+    let tally = 0
+    eventClients.forEach( res => {
+        sendSSE( res, 'broadcast', {
+            time: (new Date()).toLocaleTimeString()
+          , ok: payload
+        }, eventName)
+        tally++
+    })
+    return tally
 }
 
 function sendSSE(res, id, data, eventName=null) {

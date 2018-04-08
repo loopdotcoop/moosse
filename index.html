@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.2</title>
+<title>Oompsh 0.1.3</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -118,15 +118,15 @@ pre .server.ok    { color: #16a }
 }
 .table >* {
     display: table-cell;
-    width: 23%;
+    width: 22.5%;
 }
 #admin-method,
 #enduser-method {
-    width: 8%;
+    width: 10%;
 }
 #admin-body,
 #enduser-body {
-    width: 77%;
+    width: 77.5%;
 }
 .hid {
     display: none;
@@ -145,7 +145,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.2</h2>
+<h2>Oompsh 0.1.3</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -159,51 +159,82 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Oompsh namespace, with utilities and API -->
-<script>!function(){
+<script>!function(ROOT){
 
 //// Global API.
-window.OOMPSH = {
-    logClient: function (data) { log(this, data, 'client') }
+const OOMPSH = ROOT.OOMPSH = {
+    VERSION: '0.1.3'
+  , get APIV () { return 'v' + OOMPSH.VERSION.split('.')[0] }
+  , logClient: function (data) { log(this, data, 'client') }
   , logServer: function (data) { log(this, data, 'server') }
   , send // defined below
   , connect // defined below
   , disconnect // defined below
+
+    //// Changes an empty INPUT to blue, valid to green, or invalid to red.
+  , updateValidityHilite: ($el, rx) =>
+        $el.className = rx.test( $el.value.trim() ) ? 'valid' // green
+          : $el.value ? 'invalid' : '' // red or blue
+
+    ////
   , getActionRx: usertype => new RegExp( `^(`
-      + window.OOMPSH.api[usertype ].GET.join('|') + '|'
-      + window.OOMPSH.api[usertype].POST.join('|') + `)$` )
+      + OOMPSH.api[usertype ].GET.join('|') + '|'
+      + OOMPSH.api[usertype].POST.join('|') + `)$` )
+
   , api: {
         admin: {
-            GET:  [ 'version', '', 'index.html' ]
+            GET:  [ 'version' ]
           , POST: [ 'disconnect', 'hard-disconnect', 'notify' ]
         }
       , enduser: {
-            GET:  [ 'version', '', 'index.html', 'browse', 'read' ]
+            GET:  [ 'version', 'browse', 'read' ]
           , POST: [ 'edit', 'add', 'delete', 'notify' ]
         }
     }
-}
+
+}//OOMPSH
 
 
 //// Updates the log.
-function log ($log, rawData, source) {
+function log ($log, raw, source) {
+
+    //// Deal with `raw` if it’s a string - often an unparsed JSON string.
+    if ('string' === typeof raw) // eg 'Hi', '99', '{"nope":0}' or '{"ok":"!"}'
+        try {
+            raw = JSON.parse(raw) // eg '99', '{"nope":0}' or '{"ok":"!"}'
+        } catch (e) {
+            raw = { ok:'(string data): ' + sanitize(raw) } } // eg 'Hi'
+
+    //// Whatever has been passed to `raw`, convert it to a conformant plain
+    //// object. That is, an object with either an 'ok' or an 'error' property.
     let data
-    try { data = JSON.parse(rawData) }
-    catch (e) { data = rawData }
-    if ('object' !== typeof data) data =
-        { error:'(' + (typeof data) + ' data): ' + sanitize(data) }
-    const label = data.ok ? 'ok' : 'error'
-    const msg   = data.error || data.ok || '(no `data.error` or `data.ok`) ' + sanitize(data)
-    $log.lines.unshift('<div class="' + label + ' ' + source + '">'
-      + ('    ' + ++$log.lineTally).slice(-4) + ' ' + msg.trim()
-      + '</div>' )
+    if ('object' !== typeof raw) // eg 'number' or 'boolean' (but not 'string')
+        data = { ok:'(' + (typeof raw) + ' data): ' + sanitize(raw) }
+    else // convert to a conformant object if not already, eg `{ok:'!'}`
+        if (null != raw.ok || null != raw.error) // comformant, eg `{ok:'!'}`
+            data = Object.assign({}, raw) // keep other properties
+        else if (null == raw.ok && null != raw.message) // eg an error object
+            data = Object.assign({ error:raw.message }, raw)
+        else // some arbitrary object, eg `{nope:0}`
+            data = { ok:'(object data): ' + sanitize( JSON.stringify(raw) ) }
+
+    //// Add the log-line DIV to `$log.lines` and render the $log.
+    const label = data.error ? 'error' : 'ok'
+    const msg   = sanitize(data.error || data.ok)
+    $log.lines.unshift(
+        '<div class="' + label + ' ' + source + '">'
+      + ('    ' + ++$log.lineTally).slice(-4) // line number
+      + ' ' + msg + '</div>' )
     $log.lines = $log.lines.slice(0,10)
     $log.innerHTML = ''
       // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
       // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
       + $log.lines.join('\n')
-}//log
+
+}//log()
 
 
+//// Makes arbitrary text suitable for writing to the log.
 function sanitize (text) {
     text = ''+text
     if (80 < text.length) text = text.slice(0,80) + '...'
@@ -211,6 +242,7 @@ function sanitize (text) {
     text = text.replace(/\n/g, '\\n')
     return text
 }
+
 
 //// Sends a request to a URL and logs the result.
 function send (config) {
@@ -226,16 +258,16 @@ function send (config) {
       , bodyLog  = body ? sanitize(body) + ' to ' : ''
       , user     =   $user.value.trim()
       , pass     =   $pass.value.trim()
-      , userpass = user || pass ? user + ':' + pass + '/' : ''
-      , paranoid = user || pass ? user + ':' + (pass?'•'.repeat(pass.length):'') + '/' : ''
+      , creds    = user||pass ? user + ':' + pass + '/' : ''
+      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
-    apiv += '/' // append a slash
-    action = action ? action + '/' : '[action]/' // don’t allow a blank ‘action’
+    apiv   = apiv   ? apiv   + '/' : '' // append a slash if `apiv` has been set
+    action = action ? action + '/' : target ? '[action]/' : '' // don’t allow a blank ‘action’ if a ‘target’ is specified
     target = target ? target + '/' : '' // allow a blank ‘target’
 
     //// Build the URL, eg 'http://localhost:1234/jo:pw/notify'.
-    const url         = (domain + apiv + userpass + action + target).slice(0,-1)
-    const paranoidUrl = (domain + apiv + paranoid + action + target).slice(0,-1)
+    const url    = (domain + apiv + creds    + action + target).slice(0,-1)
+    const urlLog = (domain + apiv + credsLog + action + target).slice(0,-1)
 
     const init = 'GET' === method
       ? {   method                     // *GET, POST, PUT, DELETE, etc.
@@ -256,7 +288,7 @@ function send (config) {
             }
         }
     //// Log that `send()` has been called. @TODO log invalidation errors too
-    logClient({ok:`send() will ${method} ${bodyLog}${paranoidUrl}`})
+    logClient({ok:`send() will ${method} ${bodyLog}${urlLog}`})
 
     //// Use the Fetch API to make the request.
     fetch(url, init)
@@ -272,16 +304,18 @@ function connect (config) {
 
     //// Use the `config` object to retrieve variables.
     const { $apiv, $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
-    let apiv   = (   $apiv.value ||   $apiv.getAttribute('placeholder') ).trim()
-      , domain = ( $domain.value || $domain.getAttribute('placeholder') ).trim()
-      , user   = (   $user.value ||   $user.getAttribute('placeholder') ).trim()
-      , pass   = (   $pass.value ||   $pass.getAttribute('placeholder') ).trim()
+    let apiv     =   $apiv.value.trim()
+      , domain   = $domain.value.trim()
+      , user     =   $user.value.trim()
+      , pass     =   $pass.value.trim()
+      , creds    = user||pass ? user + ':' + pass + '/' : ''
+      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
-    apiv += '/' // append a slash
+    apiv = apiv ? apiv + '/' : '' // append a slash if `apiv` has been set
 
     //// Build the URL, eg 'http://localhost:1234/jo:pw/connect/enduser'
-    const url         = domain + apiv + user + ':' + pass + '/connect/' + usertype
-    const paranoidUrl = domain + apiv + user + ':' + '•'.repeat(pass.length) + '/connect/' + usertype
+    const url         = domain + apiv + creds + 'connect/' + usertype
+    const urlLog = domain + apiv + credsLog + 'connect/' + usertype
 
     //// Log that `connect()` has been called.
     if ('admin' !== usertype && 'enduser' !== usertype)
@@ -290,7 +324,7 @@ function connect (config) {
         return logClient({ error:'Can’t connect: EventSource already connected' })
     if (! window.EventSource)
         return logClient({ error:'Can’t connect: EventSource not supported' })
-    logClient({ ok:`connect() will connect to ${paranoidUrl}` })
+    logClient({ ok:`connect() will connect to ${urlLog}` })
 
     //// Update the buttons.
     $connect.className = 'hid'
@@ -327,8 +361,11 @@ function connect (config) {
     //// Custom events.
     es.addEventListener('disconnect', evt =>
         disconnect(config, 'server told me to'), false)
-}
 
+}//connect()
+
+
+//// Closes an SSE (Server-Sent Events) connection.
 function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
 
     //// Log that `disconnect()` has been called.
@@ -346,16 +383,17 @@ function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
 }
 
 
-}()</script>
+}(this)</script>
 
 
 
 
 <!-- API Version and Domain, used by the Admin Client and Enduser Client -->
-<input id="apiv" placeholder="v0"></input>
-<input id="domain" placeholder="Loading..."></input>
+<input id="apiv" placeholder="v?"></input>
+<input id="domain" placeholder="domain"></input>
 <span id="domain-comment"></span>
-<script>!function(){
+<script>!function(ROOT){
+const OOMPSH = ROOT.OOMPSH
 let
     $apiv   = document.querySelector('#apiv')
   , $domain = document.querySelector('#domain')
@@ -365,13 +403,13 @@ let
   , localDomainRx = /^https?:\/\/(127\.0\.0\.1|localhost)/
   , pgDomain = ( location.href.match(matchDomainRx) || [])[0]
   , remoteDomain = 'https://oompsh.herokuapp.com'
-  , placeholder = localDomainRx.test(pgDomain) ? pgDomain : remoteDomain
-$domain.setAttribute('placeholder', placeholder)
-$domain.value = $domain.value || $domain.getAttribute('placeholder')
+$domain.value = $domain.value || (localDomainRx.test(pgDomain) ? pgDomain : remoteDomain)
 $domain.addEventListener('input', validateDomain)
 validateDomain()
 function validateDomain () {
-    if (! validDomainRx.test($domain.value) )
+    if (! $domain.value)
+        $domainComment.innerHTML = ''
+    else if (! validDomainRx.test($domain.value) )
         $domainComment.innerHTML = 'Error: invalid domain'
     else if ( localDomainRx.test($domain.value) )
         $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
@@ -380,16 +418,17 @@ function validateDomain () {
         $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
           ? '(remote SSL server)' : 'Error: Remote servers must use https'
     $domain.className = 'Error: ' === $domainComment.innerHTML.slice(0,7)
-      ? 'invalid' : 'valid'
+      ? 'invalid' : $domain.value ? 'valid' : ''
 }
-$apiv.value = $apiv.value || $apiv.getAttribute('placeholder')
+$apiv.value = $apiv.value || OOMPSH.APIV
 $apiv.addEventListener('input', validateApiv)
 validateApiv()
 function validateApiv () {
-    $apiv.className = /^v\d+$/.test( $apiv.value.trim() ) ? 'valid' : 'invalid'
+    $apiv.className = /^v\d+$/.test( $apiv.value.trim() )
+      ? 'valid' : $apiv.value ? 'invalid' : ''
 }
 
-}()</script>
+}(this)</script>
 
 
 
@@ -405,18 +444,19 @@ function validateApiv () {
   <a data-method="POST" data-action="notify"     data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
 </div>
 <div class="table">
-  <input  id="admin-method" placeholder="method"></input>
-  <input  id="admin-user"   placeholder="username"></input>
-  <input  id="admin-pass"   placeholder="password"></input>
-  <input  id="admin-action" placeholder="action"></input>
-  <input  id="admin-target" placeholder="target"></input>
+  <input  id="admin-method" placeholder="method"></input><input
+          id="admin-user"   placeholder="username"></input><input
+          id="admin-pass"   placeholder="password"></input><input
+          id="admin-action" placeholder="action"></input><input
+          id="admin-target" placeholder="target"></input>
 </div>
 <div class="table">
-  <input  id="admin-body"   placeholder="body"></input>
-  <button id="admin-send">Send</button>
+  <input  id="admin-body"   placeholder="body"></input><button
+          id="admin-send">Send</button>
 </div>
-<pre    id="admin-log">Loading...</pre>
-<script>!function(){
+<pre id="admin-log">Loading...</pre>
+<script>!function(ROOT){
+const OOMPSH = ROOT.OOMPSH
 
 //// Initialise the admin config and EventSource object.
 const config = {
@@ -430,11 +470,11 @@ const
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
   , rx = {
         method: /^(GET|POST)$/
-      , user:   new RegExp(`^(${first}${other}{0,64}|)$`)
-      , pass:   new RegExp(`^(${first}${other}{0,64}|)$`)
-      , action: window.OOMPSH.getActionRx('admin')
-      , target: /^.*$/ //@TODO
-      , body:   /^.*$/ //@TODO
+      , user:   new RegExp(`^(${first}${other}{0,64})$`)
+      , pass:   new RegExp(`^(${first}${other}{0,64})$`)
+      , action: OOMPSH.getActionRx('admin')
+      , target: /^.+$/ //@TODO
+      , body:   /^.+$/ //@TODO
     }
 
 //// Add references to the various admin input fields and buttons in config.
@@ -446,16 +486,16 @@ config.$domain = document.querySelector('#domain')
    .forEach( name => {
         const $el = config['$'+name] = document.querySelector('#admin-'+name)
         if ('INPUT' === $el.tagName) {
-            $el.className = rx[name].test($el.value.trim()) ? 'valid' : 'invalid'
-            $el.addEventListener('input', evt =>
-                $el.className = rx[name].test($el.value.trim()) ? 'valid' : 'invalid')
+            OOMPSH.updateValidityHilite($el, rx[name])
+            $el.addEventListener( 'input', evt =>
+                OOMPSH.updateValidityHilite($el, rx[name]) )
         }
     })
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
 //// Set up admin logging.
-config.logClient = window.OOMPSH.logClient.bind($log)
-config.logServer = window.OOMPSH.logServer.bind($log)
+config.logClient = OOMPSH.logClient.bind($log)
+config.logServer = OOMPSH.logServer.bind($log)
 $log.lineTally = 0
 $log.lines = Array(10).fill('<div>&nbsp;</div>')
 
@@ -463,9 +503,9 @@ $log.lines = Array(10).fill('<div>&nbsp;</div>')
 config.logClient({ ok:'Ready to send' })
 
 //// Set up admin buttons.
-$send.addEventListener( 'click', evt => window.OOMPSH.send(config) )
-$connect.addEventListener( 'click', evt => window.OOMPSH.connect(config) )
-$disconnect.addEventListener( 'click', evt => window.OOMPSH.disconnect(config) )
+$send.addEventListener( 'click', evt => OOMPSH.send(config) )
+$connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
+$disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
 
 //// Set up admin shortcuts.
 $shortcuts.querySelectorAll('a').forEach( $shortcut => {
@@ -474,12 +514,12 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
         ['method','action','target','body'].forEach( name => {
             const $el = config['$'+name]
             $el.value = this.getAttribute('data-'+name)
-            $el.className = rx[name].test($el.value) ? 'valid' : 'invalid'
+            OOMPSH.updateValidityHilite($el, rx[name])
         })
     })
 })
 
-}()</script>
+}(this)</script>
 
 
 
@@ -495,18 +535,20 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
   <a data-method="POST" data-action="notify"     data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
 </div>
 <div class="table">
-  <input  id="enduser-method" placeholder="method"></input>
-  <input  id="enduser-user"   placeholder="username"></input>
-  <input  id="enduser-pass"   placeholder="password"></input>
-  <input  id="enduser-action" placeholder="action"></input>
-  <input  id="enduser-target" placeholder="target"></input>
+  <input  id="enduser-method" placeholder="method"></input><input
+          id="enduser-user"   placeholder="username"></input><input
+          id="enduser-pass"   placeholder="password"></input><input
+          id="enduser-action" placeholder="action"></input><input
+          id="enduser-target" placeholder="target"></input>
 </div>
 <div class="table">
-  <input  id="enduser-body"   placeholder="body"></input>
-  <button id="enduser-send">Send</button>
+  <input  id="enduser-body"   placeholder="body"></input><button
+          id="enduser-send">Send</button>
 </div>
-<pre    id="enduser-log">Loading...</pre>
-<script>!function(){
+<pre id="enduser-log">Loading...</pre>
+<script>!function(ROOT){
+const OOMPSH = ROOT.OOMPSH
+
 
 //// Initialise the enduser config and EventSource object.
 const config = {
@@ -520,11 +562,11 @@ const
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
   , rx = {
         method: /^(GET|POST)$/
-      , user:   new RegExp(`^(${first}${other}{0,64}|)$`)
-      , pass:   new RegExp(`^(${first}${other}{0,64}|)$`)
-      , action: window.OOMPSH.getActionRx('enduser')
-      , target: /^.*$/ //@TODO
-      , body:   /^.*$/ //@TODO
+      , user:   new RegExp(`^(${first}${other}{0,64})$`)
+      , pass:   new RegExp(`^(${first}${other}{0,64})$`)
+      , action: OOMPSH.getActionRx('enduser')
+      , target: /^.+$/ //@TODO
+      , body:   /^.+$/ //@TODO
     }
 
 //// Add references to the various enduser input fields and buttons in config.
@@ -536,16 +578,16 @@ config.$domain = document.querySelector('#domain')
    .forEach( name => {
         const $el = config['$'+name] = document.querySelector('#enduser-'+name)
         if ('INPUT' === $el.tagName) {
-            $el.className = rx[name].test($el.value.trim()) ? 'valid' : 'invalid'
-            $el.addEventListener('input', evt =>
-                $el.className = rx[name].test($el.value.trim()) ? 'valid' : 'invalid')
+            OOMPSH.updateValidityHilite($el, rx[name])
+            $el.addEventListener( 'input', evt =>
+                OOMPSH.updateValidityHilite($el, rx[name]) )
         }
     })
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
 //// Set up enduser logging.
-config.logClient = window.OOMPSH.logClient.bind($log)
-config.logServer = window.OOMPSH.logServer.bind($log)
+config.logClient = OOMPSH.logClient.bind($log)
+config.logServer = OOMPSH.logServer.bind($log)
 $log.lineTally = 0
 $log.lines = Array(10).fill('<div>&nbsp;</div>')
 
@@ -553,9 +595,9 @@ $log.lines = Array(10).fill('<div>&nbsp;</div>')
 config.logClient({ ok:'Ready to send' })
 
 //// Set up enduser buttons.
-$send.addEventListener( 'click', evt => window.OOMPSH.send(config) )
-$connect.addEventListener( 'click', evt => window.OOMPSH.connect(config) )
-$disconnect.addEventListener( 'click', evt => window.OOMPSH.disconnect(config) )
+$send.addEventListener( 'click', evt => OOMPSH.send(config) )
+$connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
+$disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
 
 //// Set up enduser shortcuts.
 $shortcuts.querySelectorAll('a').forEach( $shortcut => {
@@ -564,11 +606,11 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
         ['method','action','target','body'].forEach( name => {
             const $el = config['$'+name]
             $el.value = this.getAttribute('data-'+name)
-            $el.className = rx[name].test($el.value) ? 'valid' : 'invalid'
+            OOMPSH.updateValidityHilite($el, rx[name])
         })
     })
 })
-}()</script>
+}(this)</script>
 
 
 

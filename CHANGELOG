@@ -12,3 +12,4 @@
 0.1.0 Replace OOMPSH_AUTH0 etc with OOMPSH_ADMIN_CREDENTIALS
 0.1.1 Rename the demo Heroku app ‘https://oompsh.herokuapp.com’
 0.1.2 Prefix API URLs with ‘v0/’
+0.1.3 Sends SSE heartbeats every 10 seconds to keep TCP alive
