@@ -14,3 +14,4 @@
 0.1.2 Prefix API URLs with ‘v0/’
 0.1.3 Sends SSE heartbeats every 10 seconds to keep TCP alive
 0.1.4 Frontend persists INPUT values in cookies
+0.1.5 Refactored shared code into ‘oompsh-lib.js’

@@ -1,14 +1,21 @@
-let
-    vvv = false // very very verbose logging
-  , vv = vvv || true // very verbose logging (always true if `vvv` is true)
+//// oompsh.js //// 0.1.5 //// The Node.js server //////////////////////////////
+
+
+//// Load the OOMPSH namespace, with configuration, API and utilities.
+require('./oompsh-lib.js')
+const OOMPSH = global.OOMPSH
+
+//// Initialize mutable server state.
+const STATE = {
+    vvv: OOMPSH.vvv // very very verbose logging
+  , vv:  OOMPSH.vv  // very verbose logging (always true if `vvv` is true)
+  , sseClients: []
+  , sseID: 0
+}
+
+//// Initialize immutable server state.
 const
-    VERSION = '0.1.4' // the major part of this is also the API version, `apiv`
-  , APIV = 'v' + VERSION.split('.')[0]
-  , first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
-  , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
-  , credentialsRx = new RegExp(`^${first}${other}{0,64}:${first}${other}{0,64}$`)
-  , eventClients = []
-  , adminCredentials = getAdminCredentials()
+    adminCredentials = getAdminCredentials()
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
 app.listen( port, () => console.log(`App is listening on port ${port}`) )
@@ -16,7 +23,7 @@ app.listen( port, () => console.log(`App is listening on port ${port}`) )
 
 //// Send a ‘heartbeat’ to all SSE clients, once every 10 seconds.
 setInterval ( () => {
-    eventClients.forEach( res => res.write(':tick\n') )
+    STATE.sseClients.forEach( res => res.write(':tick\n') )
 }, 10000)
 
 
@@ -38,22 +45,20 @@ function server (req, res) {
     //// Parse the four standard parts of the URL.
     const
         parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
-      , apiv   = /^v\d+$/.test(parts[0])      ? parts[0] : null // mandatory 1st
-      , creds  = credentialsRx.test(parts[1]) ? parts[1] : null // optional 2nd
+      , apiv   = /^v\d+$/.test(parts[0]) ? parts[0] : null // mandatory 1st
+      , creds  = OOMPSH.valid.creds.test(parts[1]) ? parts[1] : null // optional 2nd
       , action = creds ? parts[2] : parts[1] // mandatory, 2nd or 3rd
       , target = creds ? parts[3] : parts[2] // optional, 3rd or 4th
+
     //// Make sure the request API version matches this script’s API version.
-    if (apiv !== APIV) {
-        res.writeHead(501)
-        return res.end('{ "error":"NOT IMPLEMENTED: Wrong API version" }\n')
-    }
+    if (apiv !== OOMPSH.APIV)
+        return error(res, 501, 'Wrong API version')
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return serveOPTIONS(req, res, creds, action, target) //@TODO remove this, if it doesn’t help CORS
-    if ('GET'     === req.method) return     serveGET(req, res, creds, action, target)
-    if ('POST'    === req.method) return    servePOST(req, res, creds, action, target)
-    res.writeHead(405)
-    res.end('{ "error":"METHOD NOT ALLOWED: Use GET or POST" }\n')
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res) //@TODO remove this, if it doesn’t help CORS
+    if ('GET'     === req.method) return serveGET(req, res, creds, action, target)
+    if ('POST'    === req.method) return servePOST(req, res, creds, action, target)
+    error(res, 405, 'Use GET, POST or OPTIONS')
 }
 
 
@@ -66,48 +71,50 @@ function serveFile (req, res) {
         res.end( require('fs').readFileSync(__dirname + '/index.html') )
     }
 
-    //// Not found.
-    else {
-        res.writeHead(404, {'Content-Type': 'text/plain'})
-        res.end('NOT FOUND: See docs, http://oompsh.loop.coop/\n')
+    //// A request for the Oompsh library JavaScript file.
+    else if ('/oompsh-lib.js' === req.url) {
+        res.writeHead(200, {'Content-Type': 'application/javascript'})
+        res.end( require('fs').readFileSync(__dirname + '/oompsh-lib.js') )
     }
 
+    //// Not found.
+    else error(res, 404, 'See docs, http://oompsh.loop.coop/', 'text/plain')
 }
 
+
 //// Serve an OPTIONS request.
-function serveOPTIONS (req, res, credentials, action, target) {
-    res.writeHead(200, {'Content-Type': 'text/html'})
-    res.end('You’re probably a CORS preflight\n')
+function serveOPTIONS (req, res) {
+    ok(res, 200, "You're probably a CORS preflight", 'text/html')
 }
+
 
 //// Serve a GET request.
 function serveGET (req, res, credentials, action, target) {
 
+    //// Validate credentials if supplied (they’re optional for GET requests).
+    if (credentials && ! OOMPSH.valid.creds.test(credentials) )
+        error(res, 401, 'Invalid credentials')
+    else if (credentials && ! adminCredentials[credentials] )
+        error(res, 401, 'Credentials not recognised')
+
     //// A version request.
-    if ('version' === action) {
-        res.writeHead(200)
-        res.end('{ "ok":"Oompsh ' + VERSION + '" }\n')
-    }
+    else if ('version' === action)
+        ok(res, 200, 'Oompsh ' + OOMPSH.VERSION)
 
     //// A request to start listening for Server-Sent Events.
     else if ('connect' === action) {
-        if (! req.headers.accept || 'text/event-stream' !== req.headers.accept) {
-            res.writeHead(406)
-            res.end('{ "error":"NOT ACCEPTIBLE: Needs ‘Accept: text/event-stream’" }\n')
-        } else {
-            res.oompshid = (Math.random()*1e16).toString(36)
-            res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
-            res.on('error', onSSEClientError.bind(res) ) // bind client to `this`
-            eventClients.push(res)
-            beginSSE(req, res)
-        }
+        if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
+            return error(res, 406, "Missing 'Accept: text/event-stream' header")
+        res.oompshid = (Math.random()*1e16).toString(36)
+        res.isAdmin = !! credentials
+        res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
+        res.on('error', onSSEClientError.bind(res) ) // bind client to `this`
+        STATE.sseClients.push(res)
+        beginSSE(req, res)
     }
 
     //// Not found.
-    else {
-        res.writeHead(404)
-        res.end('{ "error":"NOT FOUND: See docs, http://oompsh.loop.coop/" }\n')
-    }
+    else error(res, 404, 'See docs, http://oompsh.loop.coop/')
 
 }//serveGET()
 
@@ -116,60 +123,49 @@ function serveGET (req, res, credentials, action, target) {
 function servePOST (req, res, credentials, action, target) {
 
     //// Authenticate credentials.
-    if (! credentials) {
-        res.writeHead(401)
-        res.end('{ "error":"UNAUTHORIZED: Needs username:password" }\n')
-    } else if (! credentialsRx.test(credentials) ) {
-        res.writeHead(401)
-        res.end('{ "error":"UNAUTHORIZED: Invalid username:password" }\n')
-    } else if (! adminCredentials[credentials] ) {
-        res.writeHead(401)
-        res.end('{ "error":"UNAUTHORIZED: Unrecognised username:password" }\n')
-    }
+    if (! credentials) // all POST requests must have credentials
+        error(res, 401, "Can't POST without credentials")
+    else if (credentials && ! OOMPSH.valid.creds.test(credentials) )
+        error(res, 401, 'Invalid credentials')
+    else if (credentials && ! adminCredentials[credentials] )
+        error(res, 401, 'Credentials not recognised')
 
-    //// A hard-disconnect instruction. @TODO hard-disconnect a specific clientID
+    //// A hard-disconnect instruction. @TODO hard-disconnect a specific target
     else if ('hard-disconnect' === action) {
-        let tally = 0, clientRes
-        while ( clientRes = eventClients.pop() ) {
-            clientRes.end(': bye!') // SSE comments begin with a colon
-            tally++
+        let tally = { admin:0, enduser:0 }, sseRes
+        while ( sseRes = STATE.sseClients.pop() ) {
+            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
+            sseRes.end(':bye ' + usertype) // SSE comments begin with a colon
+            tally[usertype]++
         }
-        res.writeHead(201)
-        res.write('{ "ok":"Hard-disconnected ' + tally + ' enduser(s)" }\n')
+        ok(res, 201, 'Hard-disconnected '
+          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 
-    //// A disconnect instruction. @TODO disconnect a specific clientID
-    else if ('disconnect' === action) {
-        let tally = 0, clientRes
-        while ( clientRes = eventClients.pop() ) {
-            sendSSE(clientRes, 'id here', {
+    //// A soft-disconnect instruction. @TODO soft-disconnect a specific target
+    else if ('soft-disconnect' === action) {
+        let tally = { admin:0, enduser:0 }, sseRes
+        while ( sseRes = STATE.sseClients.pop() ) {
+            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
+            sendSSE(sseRes, 'soft-disconnect', {
                 time: (new Date()).toLocaleTimeString()
-              , ok: 'admin sent a disconnect instruction'
-          }, 'disconnect')
-            tally++
+              , ok: 'admin sent a soft-disconnect instruction'
+            })
+            tally[usertype]++
         }
-        res.writeHead(201)
-        res.write('{ "ok":"Broadcast ‘disconnect’ to '+tally+' enduser(s)" }\n')
+        ok(res, 201, "Broadcast 'soft-disconnect' to "
+          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 
-    //// Deal with an admin notification.
+    //// Deal with a notification.
     else if ('notify' === action) {
-        let data = []
-        req.on( 'data', chunk => data.push(chunk) )
-           .on( 'end', () => {
-                data = Buffer.concat(data).toString()
-                data = JSON.parse(data) //@TODO deal with malformed JSON
-                const tally = broadcast(data.message)
-                res.writeHead(201)
-                res.end('{ "ok":"Broadcast to ' + tally + ' enduser(s)" }\n')
-           })
+        const raw = []
+        req.on( 'data', chunk => raw.push(chunk) )
+           .on( 'end', evt => notify(res, raw) )
     }
 
     //// Not found.
-    else {
-        res.writeHead(404)
-        res.end('{ "error":"NOT FOUND: See docs, http://oompsh.loop.coop/" }\n')
-    }
+    else error(res, 404, 'See docs, http://oompsh.loop.coop/')
 
 }//servePOST()
 
@@ -179,11 +175,11 @@ function servePOST (req, res, credentials, action, target) {
 //// EVENT HANDLERS
 
 function onSSEClientClose () { const I='onSSEClientClose'
-    eventClients.forEach( (res, i) => { if (this === res) {
-        eventClients.splice(i, 1)
+    STATE.sseClients.forEach( (res, i) => { if (this === res) {
+        STATE.sseClients.splice(i, 1)
         vvok( I,`deleted ${res.oompshid} (index ${i})`)
-        vvvok(I,`counted ${eventClients.length} eventClient(s) left:`)
-        if (vvv) ok('  '+eventClients.map(res => res.oompshid).join('\n  ') )
+        vvvok(I,`counted ${STATE.sseClients.length} eventClient(s) left:`)
+        if (vvv) ok('  '+STATE.sseClients.map(res => res.oompshid).join('\n  ') )
     }})
 }
 
@@ -197,9 +193,32 @@ function onSSEClientError () {
 
 //// UTILITY
 
-function ok (msg) { console.log(msg) }
-function vvok  (fnName, msg) { if (vv)  ok(new Date()+` ${fnName}()\n  `+msg) }
-function vvvok (fnName, msg) { if (vvv) ok(new Date()+` ${fnName}()\n  `+msg) }
+
+//// Sends a response after a succesful request. Usage:
+//// ok(`res`, 200, 'That worked great!', 'text/plain'), which writes:
+//// '{ "ok":"That worked great!" }'
+function ok (res, status, remarks, contentType=null) {
+    const headers = contentType ? { 'Content-Type': contentType } : {}
+    remarks = remarks.replace(/"/g, '\\"')
+    res.writeHead(status, headers)
+    res.end(`{ "ok":"${remarks}" }\n`)
+}
+
+
+//// Sends a response after a request which failed. Usage:
+//// error(`res`, 501, 'Wrong API version'), which writes:
+//// '{ "error":"NOT IMPLEMENTED: Wrong API version" }'
+function error (res, status, remarks, contentType=null) {
+    const headers = contentType ? { 'Content-Type': contentType } : {}
+    remarks = remarks.replace(/"/g, '\\"')
+    res.writeHead(status, headers)
+    res.end(`{ "error":"${OOMPSH.api.status[status]}: ${remarks}" }\n`)
+}
+
+
+////
+function vvok  (fnName, msg) { if (vv)  console.log(new Date()+` ${fnName}()\n  `+msg) }
+function vvvok (fnName, msg) { if (vvv) console.log(new Date()+` ${fnName}()\n  `+msg) }
 function oops (msg) { console.error(msg) }
 
 function getAdminCredentials () {
@@ -209,7 +228,7 @@ function getAdminCredentials () {
         throw Error('Try `$ export OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
     envCreds = envCreds.split(',')
     envCreds.forEach( (ec, i) => {
-        if (! credentialsRx.test(ec) ) errs.push(i); else out[ec] = 1 } )
+        if (! OOMPSH.valid.creds.test(ec) ) errs.push(i); else out[ec] = 1 } )
     if (errs.length)
         throw Error('Invalid OOMPSH_ADMIN_CREDENTIALS at index ' + errs)
     return out
@@ -220,34 +239,41 @@ function beginSSE (req, res) {
         'Content-Type':  'text/event-stream' // override JSON
       , 'Connection':    'keep-alive'
     }) // we already set 'Cache-Control: no-cache'
-
-    //// Send an SSE every eight seconds on a single connection.
-    // setInterval(function() {
-    //     sendSSE( res, id, { time:(new Date()).toLocaleTimeString(), payload } )
-    // }, 8000)
-
-    sendSSE( res, 'begin', {
+    sendSSE(res, null, { // `null` makes an event named 'message'
         time: (new Date()).toLocaleTimeString()
       , ok: 'SSE session has begun'
     })
 }
 
 
+function notify (res, raw) {
+    // let data
+    raw = Buffer.concat(raw).toString()
+    try { var data = JSON.parse(raw) } catch (e) {}
+    if ('object' !== typeof data || null == data.message)
+        return error(res, 406, `Body should be '{ "message":"Hi!" }'`)
+    const { admin, enduser } = broadcast(data.message)
+    ok(res, 201, 'Notified '+ admin + ' admin(s), ' + enduser + ' enduser(s)')
+}
+
+
 function broadcast (payload, eventName=null) {
-    let tally = 0
-    eventClients.forEach( res => {
-        sendSSE( res, 'broadcast', {
+    const tally = { admin:0, enduser:0 }
+    STATE.sseClients.forEach( res => {
+        const usertype = res.isAdmin ? 'admin' : 'enduser'
+        sendSSE(res, eventName, {
             time: (new Date()).toLocaleTimeString()
           , ok: payload
-        }, eventName)
-        tally++
+        })
+        tally[usertype]++
     })
     return tally
 }
 
-function sendSSE(res, id, data, eventName=null) {
-    res.write('id: ' + id + '\n')
-    if (vvv) console.log('id: ' + id)
+
+function sendSSE (res, eventName=null, data) {
+    res.write('id: ' + (OOMPSH.sseID++) + '\n')
+    if (vvv) console.log('id: ' + OOMPSH.sseID)
     if (eventName) res.write('event: ' + eventName + '\n')
     if (eventName && vvv) console.log('event: ' + eventName)
     JSON.stringify(data, 2).split('\n').forEach(

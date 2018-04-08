@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.4</title>
+<title>Oompsh 0.1.5</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -94,10 +94,14 @@ input.invalid {
 input#apiv {
     width: 3.5em;
 }
+.shortcuts {
+    margin-bottom: 0.3em;
+}
 .shortcuts button {
     width: 18em;
 }
 pre {
+    margin-top: 0.3em;
     line-height: 2px;
 }
 pre div {
@@ -136,7 +140,6 @@ pre .server.ok    { color: #16a }
 
 
 
-
 </head>
 <body>
 <div class="container">
@@ -145,7 +148,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.4</h2>
+<h2>Oompsh 0.1.5</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -158,43 +161,33 @@ pre .server.ok    { color: #16a }
 
 
 
-<!-- Oompsh namespace, with utilities and API -->
+<!-- Load the OOMPSH namespace, with configuration, API and utilities -->
+<script src="./oompsh-lib.js"></script>
+
+
+
+
+<!-- Add browser functions to the OOMPSH namespace -->
+
 <script>!function(ROOT){
-
-//// Global API.
-const OOMPSH = ROOT.OOMPSH = {
-    VERSION: '0.1.4'
-  , get APIV () { return 'v' + OOMPSH.VERSION.split('.')[0] }
-  , logClient: function (data) { log(this, data, 'client') }
-  , logServer: function (data) { log(this, data, 'server') }
-
-    //// Validators.
-  , valid: {
-        local:  /^https?:\/\/(127\.0\.0\.1|localhost)/
-      , domain: /^https?:\/\/[-:.a-z0-9]+\/?$/
-    }
-
-    //// Methods more complex than a one-liner are defined below:
-  , send
-  , connect
-  , disconnect
-  , updateValidityHilite
-
-  , api: {
-        admin: {
-            GET:  [ 'version' ]
-          , POST: [ 'disconnect', 'hard-disconnect', 'notify' ]
-        }
-      , enduser: {
-            GET:  [ 'version', 'browse', 'read' ]
-          , POST: [ 'edit', 'add', 'delete', 'notify' ]
-        }
-    }
-
-}//OOMPSH
+const OOMPSH = ROOT.OOMPSH
 
 
-//// Updates the log.
+//// CLIENT UTILITIES
+
+//// logClient()
+//// logServer()
+//// updateValidityHilite()
+//// send()
+//// connect()
+//// disconnect()
+
+
+//// `logClient()` and `logServer()` both add a line to the onscreen logs.
+//// `logClient()` is used to log activity happening in the browser.
+//// `logServer()` is used to log messages from the server.
+OOMPSH.logClient = function (data) { log(this, data, 'client') }
+OOMPSH.logServer = function (data) { log(this, data, 'server') }
 function log ($log, raw, source) {
 
     //// Deal with `raw` if it’s a string - often an unparsed JSON string.
@@ -244,7 +237,7 @@ function sanitize (text) {
 
 
 //// Changes an empty INPUT to blue, valid to green, or invalid to red.
-function updateValidityHilite ($el) {
+OOMPSH.updateValidityHilite = function ($el) {
 
     //// Get `usertype` and `name` from the INPUT’s ID.
     const
@@ -254,25 +247,8 @@ function updateValidityHilite ($el) {
     if (usertype && ! /^admin$|^enduser$/.test(usertype) )
         throw Error(`usertype '${usertype}' invalid`)
 
-    //// Define regular expressions for validating the INPUT’s value.
-    const
-        first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
-      , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
-      , rx = {
-            apiv:   /^v\d+$/
-          , domain: /^https?:\/\/[-:.a-z0-9]+\/?$/
-          , method: /^(GET|POST)$/
-          , user:   new RegExp(`^(${first}${other}{0,64})$`)
-          , pass:   new RegExp(`^(${first}${other}{0,64})$`)
-          , action: ! usertype ? null : new RegExp( `^(`
-              + OOMPSH.api[usertype ].GET.join('|') + '|'
-              + OOMPSH.api[usertype].POST.join('|') + `)$` )
-          , target: /^.+$/ //@TODO
-          , body:   /^.+$/ //@TODO
-        }
-
     //// Set the INPUT’s class depending on its validity.
-    $el.className = rx[name].test( $el.value.trim() ) ? 'valid' // green
+    $el.className = OOMPSH.valid[name].test($el.value.trim()) ? 'valid' // green
       : $el.value ? 'invalid' : '' // red or blue
 
     //// Show a message after the '#domain' INPUT.
@@ -280,7 +256,7 @@ function updateValidityHilite ($el) {
     const $comment = document.querySelector('#domain-comment')
     if (! $el.value)
         $comment.innerHTML = ''
-    else if (! rx.domain.test($el.value) )
+    else if (! OOMPSH.valid.domain.test($el.value) )
         $comment.innerHTML = 'Error: invalid domain'
     else if ( OOMPSH.valid.local.test($el.value) )
         $comment.innerHTML = 'https' === $el.value.slice(0,5)
@@ -291,11 +267,11 @@ function updateValidityHilite ($el) {
     $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
       ? 'invalid' : $el.value ? 'valid' : ''
 
-}
+}//updateValidityHilite()
 
 
 //// Sends a request to a URL and logs the result.
-function send (config) {
+OOMPSH.send = function (config) {
 
     //// Use the `config` object to retrieve variables.
     const { $apiv, $domain, $method, $user, $pass, $action, $target, $body, logClient, logServer } = config
@@ -337,6 +313,7 @@ function send (config) {
                 'Content-Type':'application/json'
             }
         }
+
     //// Log that `send()` has been called. @TODO log invalidation errors too
     logClient({ok:`send() will ${method} ${bodyLog}${urlLog}`})
 
@@ -349,8 +326,8 @@ function send (config) {
 }//send()
 
 
-//// Makes an SSE (Server-Sent Events) connection.
-function connect (config) {
+//// Starts an SSE (Server-Sent Events) connection.
+OOMPSH.connect = function (config) {
 
     //// Use the `config` object to retrieve variables.
     const { $apiv, $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
@@ -409,7 +386,7 @@ function connect (config) {
     }, false)
 
     //// Custom events.
-    es.addEventListener('disconnect', evt =>
+    es.addEventListener('soft-disconnect', evt =>
         disconnect(config, 'server told me to'), false)
 
 }//connect()
@@ -431,6 +408,7 @@ function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
     config.$connect.className = ''
     config.$disconnect.className = 'hid'
 }
+OOMPSH.disconnect = disconnect
 
 
 }(this)</script>
@@ -451,10 +429,11 @@ function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
 <div id="admin-shortcuts" class="shortcuts">
   <button id="admin-connect">Connect Admin Client</button>
   <button id="admin-disconnect" class="hid">Disconnect Admin Client</button>
-  <a data-method=""     data-action=""           data-target=""    data-body="">Clear</a>
-  <a data-method="GET"  data-action="version"    data-target=""    data-body="">Version</a>
-  <a data-method="POST" data-action="disconnect" data-target="all" data-body="">Disconnect All</a>
-  <a data-method="POST" data-action="notify"     data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
+  <a data-method=""     data-action=""                data-target=""    data-body="">Clear</a>
+  <a data-method="GET"  data-action="version"         data-target=""    data-body="">Version</a>
+  <a data-method="POST" data-action="soft-disconnect" data-target="all" data-body="">Soft Disconnect All</a>
+  <a data-method="POST" data-action="hard-disconnect" data-target="all" data-body="">Hard Disconnect All</a>
+  <a data-method="POST" data-action="notify"          data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
 </div>
 <div class="table">
   <input  id="admin-method" placeholder="method"></input><input
@@ -482,9 +461,7 @@ config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
-   .forEach( name => {
-        const $el = config['$'+name] = document.querySelector('#admin-'+name)
-    })
+   .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
 //// Set up admin logging.
@@ -556,9 +533,7 @@ config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
-   .forEach( name => {
-        const $el = config['$'+name] = document.querySelector('#enduser-'+name)
-    })
+   .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
 //// Set up enduser logging.
@@ -618,16 +593,16 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
         }
     ) )
 
-    ////
+    //// Provide defaults for the API version and domain.
     const
-        remoteURL     = 'https://oompsh.herokuapp.com'
-      , $apiv         = document.querySelector('#apiv')
+        $apiv         = document.querySelector('#apiv')
       , $domain       = document.querySelector('#domain')
       , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
       , pgDomain      = ( location.href.match(matchDomainRx) || [])[0]
     $apiv.value   = $apiv.value || OOMPSH.APIV
     $domain.value = ROOT.OOMPSH.valid.domain.test($domain.value) ? $domain.value
-      : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain : remoteURL)
+      : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain
+      : ROOT.OOMPSH.remoteURL)
     OOMPSH.updateValidityHilite($apiv)
     OOMPSH.updateValidityHilite($domain)
 
