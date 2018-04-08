@@ -2,7 +2,7 @@ let
     vvv = false // very very verbose logging
   , vv = vvv || true // very verbose logging (always true if `vvv` is true)
 const
-    VERSION = '0.1.3' // the major part of this is also the API version, `apiv`
+    VERSION = '0.1.4' // the major part of this is also the API version, `apiv`
   , APIV = 'v' + VERSION.split('.')[0]
   , first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
   , other = '[a-zA-Z0-9!()_`~@\'"^.-]'

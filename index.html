@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.3</title>
+<title>Oompsh 0.1.4</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -68,8 +68,8 @@ button:focus, .shortcuts a:focus {
 button::-moz-focus-inner {
     border: 0; /* Firefox */
 }
-.shortcuts a {
-    outline: none!important; /* Firefox */
+input, button, .shortcuts a {
+    outline: none!important;
 }
 input {
     width: 50%;
@@ -145,7 +145,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.3</h2>
+<h2>Oompsh 0.1.4</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -163,23 +163,22 @@ pre .server.ok    { color: #16a }
 
 //// Global API.
 const OOMPSH = ROOT.OOMPSH = {
-    VERSION: '0.1.3'
+    VERSION: '0.1.4'
   , get APIV () { return 'v' + OOMPSH.VERSION.split('.')[0] }
   , logClient: function (data) { log(this, data, 'client') }
   , logServer: function (data) { log(this, data, 'server') }
-  , send // defined below
-  , connect // defined below
-  , disconnect // defined below
 
-    //// Changes an empty INPUT to blue, valid to green, or invalid to red.
-  , updateValidityHilite: ($el, rx) =>
-        $el.className = rx.test( $el.value.trim() ) ? 'valid' // green
-          : $el.value ? 'invalid' : '' // red or blue
+    //// Validators.
+  , valid: {
+        local:  /^https?:\/\/(127\.0\.0\.1|localhost)/
+      , domain: /^https?:\/\/[-:.a-z0-9]+\/?$/
+    }
 
-    ////
-  , getActionRx: usertype => new RegExp( `^(`
-      + OOMPSH.api[usertype ].GET.join('|') + '|'
-      + OOMPSH.api[usertype].POST.join('|') + `)$` )
+    //// Methods more complex than a one-liner are defined below:
+  , send
+  , connect
+  , disconnect
+  , updateValidityHilite
 
   , api: {
         admin: {
@@ -244,6 +243,57 @@ function sanitize (text) {
 }
 
 
+//// Changes an empty INPUT to blue, valid to green, or invalid to red.
+function updateValidityHilite ($el) {
+
+    //// Get `usertype` and `name` from the INPUT’s ID.
+    const
+        parts = $el.id.split('-')
+      , name = parts.pop() // eg 'target' or 'apiv'
+      , usertype = parts[0] // eg 'admin', 'enduser' (or undefined if apiv)
+    if (usertype && ! /^admin$|^enduser$/.test(usertype) )
+        throw Error(`usertype '${usertype}' invalid`)
+
+    //// Define regular expressions for validating the INPUT’s value.
+    const
+        first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
+      , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
+      , rx = {
+            apiv:   /^v\d+$/
+          , domain: /^https?:\/\/[-:.a-z0-9]+\/?$/
+          , method: /^(GET|POST)$/
+          , user:   new RegExp(`^(${first}${other}{0,64})$`)
+          , pass:   new RegExp(`^(${first}${other}{0,64})$`)
+          , action: ! usertype ? null : new RegExp( `^(`
+              + OOMPSH.api[usertype ].GET.join('|') + '|'
+              + OOMPSH.api[usertype].POST.join('|') + `)$` )
+          , target: /^.+$/ //@TODO
+          , body:   /^.+$/ //@TODO
+        }
+
+    //// Set the INPUT’s class depending on its validity.
+    $el.className = rx[name].test( $el.value.trim() ) ? 'valid' // green
+      : $el.value ? 'invalid' : '' // red or blue
+
+    //// Show a message after the '#domain' INPUT.
+    if ('domain' !== $el.id) return
+    const $comment = document.querySelector('#domain-comment')
+    if (! $el.value)
+        $comment.innerHTML = ''
+    else if (! rx.domain.test($el.value) )
+        $comment.innerHTML = 'Error: invalid domain'
+    else if ( OOMPSH.valid.local.test($el.value) )
+        $comment.innerHTML = 'https' === $el.value.slice(0,5)
+          ? '(local SSL server)' : '(local servers don’t have to use https)'
+    else
+        $comment.innerHTML = 'https' === $el.value.slice(0,5)
+          ? '(remote SSL server)' : 'Error: Remote servers must use https'
+    $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
+      ? 'invalid' : $el.value ? 'valid' : ''
+
+}
+
+
 //// Sends a request to a URL and logs the result.
 function send (config) {
 
@@ -274,13 +324,13 @@ function send (config) {
           , cache:       'no-cache'    // *default, no-cache, reload, force-c...
           , mode:        'cors'        // *same-origin, no-cors, cors
           , redirect:    'error'       // *manual, follow, error
-          , referrer:    'no-referrer' // *client, no-referrer
+          , referrerPolicy:    'no-referrer' // *client, no-referrer
         }
       : {   method                     // *GET, POST, PUT, DELETE, etc.
           , cache:       'no-cache'    // *default, no-cache, reload, force-c...
           , mode:        'cors'        // *same-origin, no-cors, cors
           , redirect:    'error'       // *manual, follow, error
-          , referrer:    'no-referrer' // *client, no-referrer
+          , referrerPolicy:    'no-referrer' // *client, no-referrer
           , credentials: 'omit'        // *omit, include, same-origin @TODO omit?
           , body                       // must match 'Content-Type' header
           , headers: {
@@ -388,47 +438,10 @@ function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
 
 
 
-<!-- API Version and Domain, used by the Admin Client and Enduser Client -->
+<!-- The API version and domain, used by the Admin Client and Enduser Client -->
 <input id="apiv" placeholder="v?"></input>
 <input id="domain" placeholder="domain"></input>
 <span id="domain-comment"></span>
-<script>!function(ROOT){
-const OOMPSH = ROOT.OOMPSH
-let
-    $apiv   = document.querySelector('#apiv')
-  , $domain = document.querySelector('#domain')
-  , $domainComment = document.querySelector('#domain-comment')
-  , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
-  , validDomainRx = /^https?:\/\/[-:.a-z0-9]+\/?$/
-  , localDomainRx = /^https?:\/\/(127\.0\.0\.1|localhost)/
-  , pgDomain = ( location.href.match(matchDomainRx) || [])[0]
-  , remoteDomain = 'https://oompsh.herokuapp.com'
-$domain.value = $domain.value || (localDomainRx.test(pgDomain) ? pgDomain : remoteDomain)
-$domain.addEventListener('input', validateDomain)
-validateDomain()
-function validateDomain () {
-    if (! $domain.value)
-        $domainComment.innerHTML = ''
-    else if (! validDomainRx.test($domain.value) )
-        $domainComment.innerHTML = 'Error: invalid domain'
-    else if ( localDomainRx.test($domain.value) )
-        $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
-          ? '(local SSL server)' : '(local servers don’t have to use https)'
-    else
-        $domainComment.innerHTML = 'https' === $domain.value.slice(0,5)
-          ? '(remote SSL server)' : 'Error: Remote servers must use https'
-    $domain.className = 'Error: ' === $domainComment.innerHTML.slice(0,7)
-      ? 'invalid' : $domain.value ? 'valid' : ''
-}
-$apiv.value = $apiv.value || OOMPSH.APIV
-$apiv.addEventListener('input', validateApiv)
-validateApiv()
-function validateApiv () {
-    $apiv.className = /^v\d+$/.test( $apiv.value.trim() )
-      ? 'valid' : $apiv.value ? 'invalid' : ''
-}
-
-}(this)</script>
 
 
 
@@ -464,32 +477,13 @@ const config = {
   , es: null
 }
 
-//// Define INPUT field validators.
-const
-    first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
-  , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
-  , rx = {
-        method: /^(GET|POST)$/
-      , user:   new RegExp(`^(${first}${other}{0,64})$`)
-      , pass:   new RegExp(`^(${first}${other}{0,64})$`)
-      , action: OOMPSH.getActionRx('admin')
-      , target: /^.+$/ //@TODO
-      , body:   /^.+$/ //@TODO
-    }
-
-//// Add references to the various admin input fields and buttons in config.
-//// Also, set up validation on inputs.
+//// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach( name => {
         const $el = config['$'+name] = document.querySelector('#admin-'+name)
-        if ('INPUT' === $el.tagName) {
-            OOMPSH.updateValidityHilite($el, rx[name])
-            $el.addEventListener( 'input', evt =>
-                OOMPSH.updateValidityHilite($el, rx[name]) )
-        }
     })
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
@@ -514,7 +508,8 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
         ['method','action','target','body'].forEach( name => {
             const $el = config['$'+name]
             $el.value = this.getAttribute('data-'+name)
-            OOMPSH.updateValidityHilite($el, rx[name])
+            document.cookie = $el.id + '=' + $el.value
+            OOMPSH.updateValidityHilite($el)
         })
     })
 })
@@ -556,32 +551,13 @@ const config = {
   , es: null
 }
 
-//// Define INPUT field validators.
-const
-    first = '[a-zA-Z0-9!()_`~@\'"^]' // not allowed to start with . or -
-  , other = '[a-zA-Z0-9!()_`~@\'"^.-]'
-  , rx = {
-        method: /^(GET|POST)$/
-      , user:   new RegExp(`^(${first}${other}{0,64})$`)
-      , pass:   new RegExp(`^(${first}${other}{0,64})$`)
-      , action: OOMPSH.getActionRx('enduser')
-      , target: /^.+$/ //@TODO
-      , body:   /^.+$/ //@TODO
-    }
-
-//// Add references to the various enduser input fields and buttons in config.
-//// Also, set up validation on inputs.
+//// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
 'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach( name => {
         const $el = config['$'+name] = document.querySelector('#enduser-'+name)
-        if ('INPUT' === $el.tagName) {
-            OOMPSH.updateValidityHilite($el, rx[name])
-            $el.addEventListener( 'input', evt =>
-                OOMPSH.updateValidityHilite($el, rx[name]) )
-        }
     })
 const { $send, $connect, $disconnect, $shortcuts, $log } = config
 
@@ -592,7 +568,7 @@ $log.lineTally = 0
 $log.lines = Array(10).fill('<div>&nbsp;</div>')
 
 //// Log a ready message.
-config.logClient({ ok:'Ready to send' })
+config.logClient({ ok:'Ready to connect' })
 
 //// Set up enduser buttons.
 $send.addEventListener( 'click', evt => OOMPSH.send(config) )
@@ -606,10 +582,55 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
         ['method','action','target','body'].forEach( name => {
             const $el = config['$'+name]
             $el.value = this.getAttribute('data-'+name)
-            OOMPSH.updateValidityHilite($el, rx[name])
+            document.cookie = $el.id + '=' + $el.value
+            OOMPSH.updateValidityHilite($el)
         })
     })
 })
+}(this)</script>
+
+
+
+
+<!-- 1. Persist INPUT values after refresh (Firefox does this automatically) -->
+<!-- 2. Highlight inputs blue, green or red depending on their validity -->
+<!-- 3. Provide defaults for the API version and domain -->
+<script>!function(ROOT){
+    const $$inputs = document.querySelectorAll('input')
+
+    //// Restore INPUT values to their previous values, if any.
+    //// Also, highlight inputs blue, green or red depending on their validity.
+    prevVals = {}
+    document.cookie.split(';').forEach( keyval => {
+        [ key, val ] = keyval.trim().split('=')
+        prevVals[key] = val
+    })
+    $$inputs.forEach( $el => {
+        $el.value = prevVals[$el.id] || ''
+        OOMPSH.updateValidityHilite($el)
+    })
+
+    //// Update cookies and validity-highlight every time an input changes.
+    $$inputs.forEach( $el => $el.addEventListener('input',
+        evt => {
+            document.cookie = $el.id + '=' + $el.value
+            OOMPSH.updateValidityHilite($el)
+        }
+    ) )
+
+    ////
+    const
+        remoteURL     = 'https://oompsh.herokuapp.com'
+      , $apiv         = document.querySelector('#apiv')
+      , $domain       = document.querySelector('#domain')
+      , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
+      , pgDomain      = ( location.href.match(matchDomainRx) || [])[0]
+    $apiv.value   = $apiv.value || OOMPSH.APIV
+    $domain.value = ROOT.OOMPSH.valid.domain.test($domain.value) ? $domain.value
+      : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain : remoteURL)
+    OOMPSH.updateValidityHilite($apiv)
+    OOMPSH.updateValidityHilite($domain)
+
 }(this)</script>
 
 
