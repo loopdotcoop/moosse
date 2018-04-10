@@ -1,8 +1,8 @@
-//// oompsh.js //// 0.1.6 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.1.7 //// The Node.js server //////////////////////////////
 
 
-//// Load the OOMPSH namespace, with configuration, API and utilities.
-require('./oompsh-lib.js')
+//// Load the OOMPSH namespace, with configuration, API and validators.
+require('./oompsh-config.js')
 const OOMPSH = global.OOMPSH
 
 //// Initialize mutable server state.
@@ -58,7 +58,7 @@ function server (req, res) {
       , target = creds ? parts[3] : parts[2] // optional, 3rd or 4th
 
     //// Make sure the request API version matches this script’s API version.
-    if (apiv !== OOMPSH.APIV)
+    if (apiv !== OOMPSH.configuration.APIV)
         return error(res, 501, 'Wrong API version')
 
     //// Deal with the request depending on its method.
@@ -77,10 +77,10 @@ function serveFile (req, res) {
         res.end( require('fs').readFileSync(__dirname + '/index.html') )
     }
 
-    //// A request for the Oompsh library JavaScript file.
-    else if ('/oompsh-lib.js' === req.url) {
+    //// A request for the Oompsh configuration JavaScript file.
+    else if ('/oompsh-config.js' === req.url) {
         res.writeHead(200, {'Content-Type': 'application/javascript'})
-        res.end( require('fs').readFileSync(__dirname + '/oompsh-lib.js') )
+        res.end( require('fs').readFileSync(__dirname + '/oompsh-config.js') )
     }
 
     //// Not found.
@@ -104,14 +104,14 @@ function serveGET (req, res, credentials, action, target) {
             error(res, 401, 'Invalid credentials')
         else if (! adminCredentials[credentials] )
             error(res, 401, 'Credentials not recognised')
-        else if (! OOMPSH.api.admin.GET.includes(action) )
+        else if (! OOMPSH.api.admin.GET[action] )
             error(res, 404, 'See docs, http://oompsh.loop.coop/')
         else
             OOMPSH.action[action](req, res, credentials, action, target)
 
     //// GET requests without credentials can only access ‘enduser’ GET actions.
     else
-        if (! OOMPSH.api.enduser.GET.includes(action) )
+        if (! OOMPSH.api.enduser.GET[action] )
             error(res, 404, 'See docs, http://oompsh.loop.coop/')
         else
             OOMPSH.action[action](req, res, credentials, action, target)
@@ -129,7 +129,7 @@ function servePOST (req, res, credentials, action, target) {
         error(res, 401, 'Invalid credentials')
     else if (credentials && ! adminCredentials[credentials] )
         error(res, 401, 'Credentials not recognised')
-    else if (! OOMPSH.api.admin.POST.includes(action) )
+    else if (! OOMPSH.api.admin.POST[action] )
         error(res, 404, 'See docs, http://oompsh.loop.coop/')
     else
         OOMPSH.action[action](req, res, credentials, action, target)
@@ -165,7 +165,7 @@ OOMPSH.action = {
 
     //// A version request.
     version: (req, res) =>
-        ok(res, 200, 'Oompsh ' + OOMPSH.VERSION)
+        ok(res, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
 
     //// A request to start listening for Server-Sent Events.
   , connect: (req, res, credentials) => {
@@ -217,8 +217,8 @@ OOMPSH.action = {
 
 //// Ensure consistency between OOMPSH.action and OOMPSH.api.
 {
-    const a = OOMPSH.api.admin, e = OOMPSH.api.enduser
-        , l = a.GET.concat(a.POST, e.GET, e.POST)
+    const a = OOMPSH.api.admin, e = OOMPSH.api.enduser, keys = Object.keys
+        , l = keys(a.GET).concat(keys(a.POST), keys(e.GET), keys(e.POST))
     for (let key of l)
         if (! OOMPSH.action[key]) throw Error(`Missing OOMPSH.action.${key}()`)
     for (let key in OOMPSH.action)
@@ -254,8 +254,8 @@ function error (res, status, remarks, contentType=null) {
 
 
 ////
-function vvok  (fnName, msg) { if (vv)  console.log(new Date()+` ${fnName}()\n  `+msg) }
-function vvvok (fnName, msg) { if (vvv) console.log(new Date()+` ${fnName}()\n  `+msg) }
+function vvok  (fnName, msg) { if (1/*vv*/)  console.log(new Date()+` ${fnName}()\n  `+msg) }
+function vvvok (fnName, msg) { if (0/*vvv*/) console.log(new Date()+` ${fnName}()\n  `+msg) }
 function oops (msg) { console.error(msg) }
 
 function getAdminCredentials () {
@@ -309,14 +309,14 @@ function broadcast (payload, eventName=null) {
 
 function sendSSE (res, eventName=null, data) {
     res.write('id: ' + (OOMPSH.sseID++) + '\n')
-    if (vvv) console.log('id: ' + OOMPSH.sseID)
+    // if (vvv) console.log('id: ' + OOMPSH.sseID)
     if (eventName) res.write('event: ' + eventName + '\n')
-    if (eventName && vvv) console.log('event: ' + eventName)
+    // if (eventName && vvv) console.log('event: ' + eventName)
     JSON.stringify(data, 2).split('\n').forEach(
         line => {
             res.write('data: ' + line + '\n')
-            if (vvv) console.log('data: ' + line)
+            // if (vvv) console.log('data: ' + line)
         })
     res.write('\n')
-    if (vvv) console.log('')
+    // if (vvv) console.log('')
 }

@@ -1,6 +1,6 @@
 {
   "name": "oompsh",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A Node.js server which adds realtime push notification to Oom apps",
   "main": "oompsh.js",
   "engines": {
@@ -14,7 +14,8 @@
   },
   "scripts": {
     "start": "node oompsh.js",
-    "test": "node test.js@TODO"
+    "test": "node test.js@TODO",
+    "build": "node config-builder.js oompsh-config.js"
   },
   "repository": {
     "type": "git",

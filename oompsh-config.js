@@ -1,78 +1,23 @@
-# Oompsh
+//// oompsh-config.js //// 0.1.7 //// Config shared by browsers and servers ////
 
-#### A Node.js server which adds realtime push notification to Oom apps
-
-+ __Last update:__  2018/04/09
-+ __Version:__      0.1.7
-
-[Homepage](http://oompsh.loop.coop/) &nbsp;
-[Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
-[NPM](https://www.npmjs.com/package/oompsh) &nbsp;
-[Changelog](http://oompsh.loop.coop/CHANGELOG) &nbsp;
-[Test @TODO](http://oompsh.loop.coop/support/test.html)
-
-Oom &nbsp;
-🔅 &nbsp;
-Realtime &nbsp;
-🌟 &nbsp;
-Push &nbsp;
-🎉 &nbsp;
-Server-Sent Events
-
-
-
-
-## Author
-
-Designed, developed and authored by Rich Plastow for Loop.Coop.
-
-+ __Website:__
-  [richplastow.com](http://richplastow.com/) &nbsp;
-  [loop.coop](https://loop.coop/)
-+ __GitHub:__
-  [richplastow](https://github.com/richplastow) &nbsp;
-  [loopdotcoop](https://github.com/loopdotcoop)
-+ __Twitter:__
-  [@richplastow](https://twitter.com/richplastow) &nbsp;
-  [@loopdotcoop](https://twitter.com/loopdotcoop)
-+ __Location:__
-  Brighton, UK and Himachal Pradesh, India
-
-
-
-
-## App
-
-+ __Locales:__
-  - English
-+ __Software:__
-  - Atom
-  - Git
-+ __Languages:__
-  - HTML5
-  - CSS3
-  - JavaScript ES6
-+ __Dependencies:__
-  - None!
-
-
-
-
-<!-- BEGIN config-builder.js -->
+/**
 ## Namespace
 
 The global namespace is `window.OOMPSH` in a browser, or `global.OOMPSH` in the
 Node.js server.
 
-```js
+*/ !function(ROOT){
+
 ROOT.OOMPSH = {}
-```
+
+}('object' === typeof global ? global : this) /**
 
 
 
 ## Configuration
 
-```js
+*/ !function(ROOT){
+
 ROOT.OOMPSH.configuration = {
 
     VERSION: '0.1.7' // the major part of this is also the API version, `APIV`
@@ -91,14 +36,16 @@ ROOT.OOMPSH.configuration = {
   , vv:  true  // very verbose logging (must be true if `vvv` is true)
 
 }
-```
+
+}('object' === typeof global ? global : this) /**
 
 
 
 
 ## API
 
-```js
+*/ !function(ROOT){
+
 const OOMPSH = ROOT.OOMPSH
 const api = ROOT.OOMPSH.api = {
     enduser: {
@@ -130,14 +77,16 @@ const api = ROOT.OOMPSH.api = {
 //// Duplicate all enduser actions to admin.
 api.admin.GET  = Object.assign(api.admin.GET, api.enduser.GET)
 api.admin.POST = Object.assign(api.admin.POST, api.enduser.POST)
-```
+
+}('object' === typeof global ? global : this) /**
 
 
 
 
 ## Validators
 
-```js
+*/ !function(ROOT){
+
 const OOMPSH = ROOT.OOMPSH
     , { c1, c2 } = OOMPSH.configuration
     , { admin, enduser } = OOMPSH.api
@@ -163,24 +112,6 @@ OOMPSH.valid = {
   , target: /^.+$/ //@TODO
   , body:   /^.+$/ //@TODO
 }
-```
-<!-- END config-builder.js -->
 
-
-
-
-## Heroku
-
-Once Heroku is set up, you can check for current environment (config) variables:  
-`$ heroku run printenv`  
-
-You’ll need to choose an admin username and password, and record it in the
-`OOMPSH_ADMIN_CREDENTIALS` config var:  
-`$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=<admin-username>:<admin-password>`
-
-You can define any number of admin credentials this way, eg:  
-`$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass,pat:foobar`  
-Note that oompsh.js throws an error on startup if any credentials are invalid.
-
-After each `$ git commit` and `$ git push`, you should redeploy the app:  
-`$ git push heroku master`
+}('object' === typeof global ? global : this) /**
+Built by config-builder.js */

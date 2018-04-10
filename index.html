@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.6</title>
+<title>Oompsh 0.1.7</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -36,7 +36,7 @@ h2, nav {
 p {
     margin: 0;
 }
-input, pre, button, .shortcuts a {
+input, pre, button, .samples a {
     width: 100%;
     padding: 0.5em 1em;
     box-sizing: border-box;
@@ -46,7 +46,7 @@ input, pre, button, .shortcuts a {
     font: 1em/0.65 monospace;
     text-decoration: none;
 }
-button, .shortcuts a {
+button, .samples a {
     color: #000;
     background: #ccc;
     border: 1px solid #fff;
@@ -56,19 +56,19 @@ button, .shortcuts a {
     font-family: Arial, sans-serif;
     transition: background-color 0.2s;
 }
-.shortcuts a {
+.samples a {
     font-size: 0.8em;
 }
-button:hover, .shortcuts a:hover {
+button:hover, .samples a:hover {
     background: #ddd;
 }
-button:focus, .shortcuts a:focus {
+button:focus, .samples a:focus {
     background: #bbb;
 }
 button::-moz-focus-inner {
     border: 0; /* Firefox */
 }
-input, button, .shortcuts a {
+input, button, .samples a {
     outline: none!important;
 }
 input {
@@ -94,10 +94,10 @@ input.invalid {
 input#apiv {
     width: 3.5em;
 }
-.shortcuts {
+.samples {
     margin-bottom: 0.3em;
 }
-.shortcuts button {
+.samples button {
     width: 18em;
 }
 pre {
@@ -148,7 +148,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.6</h2>
+<h2>Oompsh 0.1.7</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -161,8 +161,8 @@ pre .server.ok    { color: #16a }
 
 
 
-<!-- Load the OOMPSH namespace, with configuration, API and utilities -->
-<script src="./oompsh-lib.js"></script>
+<!-- Load the OOMPSH namespace, with configuration, API and validators -->
+<script src="./oompsh-config.js"></script>
 
 
 
@@ -236,6 +236,28 @@ function sanitize (text) {
 }
 
 
+//// Create admin sample buttons.
+OOMPSH.addSampleButton = function (actions, method, config) {
+    for (let action in actions) {
+        const sample = actions[action].sample || {}
+           , $sample = document.createElement('A')
+        sample.action = action
+        sample.method = method
+        $sample.innerHTML = action + '/' + (sample.target || '')
+        $sample.addEventListener('click', evt => {
+            ['method','action','target','body'].forEach( name => {
+                const $el = config['$'+name]
+                $el.value = sample[name] || ''
+                document.cookie = '$'+name + '=' + sample[name]
+                OOMPSH.updateValidityHilite($el)
+            })
+            if (evt.altKey) setTimeout( () => OOMPSH.send(config), 1)
+        })
+        config.$samples.appendChild($sample)
+    }
+}
+
+
 //// Changes an empty INPUT to blue, valid to green, or invalid to red.
 OOMPSH.updateValidityHilite = function ($el) {
 
@@ -248,8 +270,8 @@ OOMPSH.updateValidityHilite = function ($el) {
         throw Error(`usertype '${usertype}' invalid`)
 
     //// Set the INPUT’s class depending on its validity.
-    $el.className = OOMPSH.valid[name].test($el.value.trim()) ? 'valid' // green
-      : $el.value ? 'invalid' : '' // red or blue
+    $el.className = $el.value ? OOMPSH.valid[name].test($el.value.trim())
+      ? 'valid' : 'invalid' : '' // green, red or blue
 
     //// Show a message after the '#domain' INPUT.
     if ('domain' !== $el.id) return
@@ -426,14 +448,9 @@ OOMPSH.disconnect = disconnect
 
 <!-- Admin Client -->
 <hr>
-<div id="admin-shortcuts" class="shortcuts">
+<div id="admin-samples" class="samples">
   <button id="admin-connect">Connect Admin Client</button>
   <button id="admin-disconnect" class="hid">Disconnect Admin Client</button>
-  <a data-method=""     data-action=""                data-target=""    data-body="">Clear</a>
-  <a data-method="GET"  data-action="version"         data-target=""    data-body="">Version</a>
-  <a data-method="POST" data-action="soft-disconnect" data-target="all" data-body="">Soft Disconnect All</a>
-  <a data-method="POST" data-action="hard-disconnect" data-target="all" data-body="">Hard Disconnect All</a>
-  <a data-method="POST" data-action="notify"          data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
 </div>
 <div class="table">
   <input  id="admin-method" placeholder="method"></input><input
@@ -459,10 +476,10 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
+'connect,disconnect,samples,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
-const { $send, $connect, $disconnect, $shortcuts, $log } = config
+const { $send, $connect, $disconnect, $samples, $log } = config
 
 //// Set up admin logging.
 config.logClient = OOMPSH.logClient.bind($log)
@@ -478,18 +495,10 @@ $send.addEventListener( 'click', evt => OOMPSH.send(config) )
 $connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
 $disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
 
-//// Set up admin shortcuts.
-$shortcuts.querySelectorAll('a').forEach( $shortcut => {
-    $shortcut.href = 'javascript:void(0)'
-    $shortcut.addEventListener('click', function (evt) {
-        ['method','action','target','body'].forEach( name => {
-            const $el = config['$'+name]
-            $el.value = this.getAttribute('data-'+name)
-            document.cookie = $el.id + '=' + $el.value
-            OOMPSH.updateValidityHilite($el)
-        })
-    })
-})
+//// Create admin sample buttons.
+OOMPSH.addSampleButton({ '':{ sample:{} } }, '', config) // the ‘clear’ button
+OOMPSH.addSampleButton(OOMPSH.api.admin.GET, 'GET', config)
+OOMPSH.addSampleButton(OOMPSH.api.admin.POST, 'POST', config)
 
 }(this)</script>
 
@@ -498,13 +507,9 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
 
 <!-- Enduser Client -->
 <hr>
-<div id="enduser-shortcuts" class="shortcuts">
+<div id="enduser-samples" class="samples">
   <button id="enduser-connect">Connect Enduser Client</button>
   <button id="enduser-disconnect" class="hid">Disconnect Enduser Client</button>
-  <a data-method=""     data-action=""           data-target=""    data-body="">Clear</a>
-  <a data-method="GET"  data-action="version"    data-target=""    data-body="">Version</a>
-  <a data-method="POST" data-action="edit"       data-target="1"   data-body="">Edit wpid 1</a>
-  <a data-method="POST" data-action="notify"     data-target="all" data-body='{"message":"Hello Ooms"}'>Hello Ooms</a>
 </div>
 <div class="table">
   <input  id="enduser-method" placeholder="method"></input><input
@@ -531,10 +536,10 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'connect,disconnect,shortcuts,method,user,pass,action,target,body,send,log'
+'connect,disconnect,samples,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
-const { $send, $connect, $disconnect, $shortcuts, $log } = config
+const { $send, $connect, $disconnect, $samples, $log } = config
 
 //// Set up enduser logging.
 config.logClient = OOMPSH.logClient.bind($log)
@@ -550,18 +555,11 @@ $send.addEventListener( 'click', evt => OOMPSH.send(config) )
 $connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
 $disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
 
-//// Set up enduser shortcuts.
-$shortcuts.querySelectorAll('a').forEach( $shortcut => {
-    $shortcut.href = 'javascript:void(0)'
-    $shortcut.addEventListener('click', function (evt) {
-        ['method','action','target','body'].forEach( name => {
-            const $el = config['$'+name]
-            $el.value = this.getAttribute('data-'+name)
-            document.cookie = $el.id + '=' + $el.value
-            OOMPSH.updateValidityHilite($el)
-        })
-    })
-})
+//// Create enduser sample buttons.
+OOMPSH.addSampleButton({ '':{ sample:{} } }, '', config) // the ‘clear’ button
+OOMPSH.addSampleButton(OOMPSH.api.enduser.GET, 'GET', config)
+OOMPSH.addSampleButton(OOMPSH.api.enduser.POST, 'POST', config)
+
 }(this)</script>
 
 
@@ -599,7 +597,7 @@ $shortcuts.querySelectorAll('a').forEach( $shortcut => {
       , $domain       = document.querySelector('#domain')
       , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
       , pgDomain      = ( location.href.match(matchDomainRx) || [])[0]
-    $apiv.value   = $apiv.value || OOMPSH.APIV
+    $apiv.value   = $apiv.value || OOMPSH.configuration.APIV
     $domain.value = ROOT.OOMPSH.valid.domain.test($domain.value) ? $domain.value
       : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain
       : ROOT.OOMPSH.remoteURL)
