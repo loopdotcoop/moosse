@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.1.5 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.1.6 //// The Node.js server //////////////////////////////
 
 
 //// Load the OOMPSH namespace, with configuration, API and utilities.
@@ -27,6 +27,10 @@ setInterval ( () => {
 }, 10000)
 
 
+
+
+//// SERVE
+
 //// Serve the proper response.
 function server (req, res) {
 
@@ -42,10 +46,13 @@ function server (req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept') //@TODO cull this list to the minimum
 
+    //// All OPTIONS requests succeed.
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res) //@TODO remove this, if it doesn’t help CORS
+
     //// Parse the four standard parts of the URL.
     const
         parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
-      , apiv   = /^v\d+$/.test(parts[0]) ? parts[0] : null // mandatory 1st
+      , apiv   = OOMPSH.valid.apiv.test(parts[0])  ? parts[0] : null // mandatory 1st
       , creds  = OOMPSH.valid.creds.test(parts[1]) ? parts[1] : null // optional 2nd
       , action = creds ? parts[2] : parts[1] // mandatory, 2nd or 3rd
       , target = creds ? parts[3] : parts[2] // optional, 3rd or 4th
@@ -55,14 +62,13 @@ function server (req, res) {
         return error(res, 501, 'Wrong API version')
 
     //// Deal with the request depending on its method.
-    if ('OPTIONS' === req.method) return serveOPTIONS(req, res) //@TODO remove this, if it doesn’t help CORS
     if ('GET'     === req.method) return serveGET(req, res, creds, action, target)
     if ('POST'    === req.method) return servePOST(req, res, creds, action, target)
     error(res, 405, 'Use GET, POST or OPTIONS')
 }
 
 
-//// Serve a top-level file.
+//// Serve a file.
 function serveFile (req, res) {
 
     //// A request for the example client page.
@@ -91,83 +97,43 @@ function serveOPTIONS (req, res) {
 //// Serve a GET request.
 function serveGET (req, res, credentials, action, target) {
 
-    //// Validate credentials if supplied (they’re optional for GET requests).
-    if (credentials && ! OOMPSH.valid.creds.test(credentials) )
-        error(res, 401, 'Invalid credentials')
-    else if (credentials && ! adminCredentials[credentials] )
-        error(res, 401, 'Credentials not recognised')
+    //// A GET request with valid credentials has access to the ‘admin’ GET
+    //// actions, as well as the ‘enduser’ GET actions.
+    if (credentials)
+        if (! OOMPSH.valid.creds.test(credentials) )
+            error(res, 401, 'Invalid credentials')
+        else if (! adminCredentials[credentials] )
+            error(res, 401, 'Credentials not recognised')
+        else if (! OOMPSH.api.admin.GET.includes(action) )
+            error(res, 404, 'See docs, http://oompsh.loop.coop/')
+        else
+            OOMPSH.action[action](req, res, credentials, action, target)
 
-    //// A version request.
-    else if ('version' === action)
-        ok(res, 200, 'Oompsh ' + OOMPSH.VERSION)
-
-    //// A request to start listening for Server-Sent Events.
-    else if ('connect' === action) {
-        if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
-            return error(res, 406, "Missing 'Accept: text/event-stream' header")
-        res.oompshid = (Math.random()*1e16).toString(36)
-        res.isAdmin = !! credentials
-        res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
-        res.on('error', onSSEClientError.bind(res) ) // bind client to `this`
-        STATE.sseClients.push(res)
-        beginSSE(req, res)
-    }
-
-    //// Not found.
-    else error(res, 404, 'See docs, http://oompsh.loop.coop/')
-
-}//serveGET()
+    //// GET requests without credentials can only access ‘enduser’ GET actions.
+    else
+        if (! OOMPSH.api.enduser.GET.includes(action) )
+            error(res, 404, 'See docs, http://oompsh.loop.coop/')
+        else
+            OOMPSH.action[action](req, res, credentials, action, target)
+}
 
 
 //// Serve a POST request.
 function servePOST (req, res, credentials, action, target) {
 
-    //// Authenticate credentials.
-    if (! credentials) // all POST requests must have credentials
+    //// All POST requests must have valid credentials. Currently, Oompsh does
+    //// not offer any POST actions to endusers.
+    if (! credentials)
         error(res, 401, "Can't POST without credentials")
     else if (credentials && ! OOMPSH.valid.creds.test(credentials) )
         error(res, 401, 'Invalid credentials')
     else if (credentials && ! adminCredentials[credentials] )
         error(res, 401, 'Credentials not recognised')
-
-    //// A hard-disconnect instruction. @TODO hard-disconnect a specific target
-    else if ('hard-disconnect' === action) {
-        let tally = { admin:0, enduser:0 }, sseRes
-        while ( sseRes = STATE.sseClients.pop() ) {
-            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-            sseRes.end(':bye ' + usertype) // SSE comments begin with a colon
-            tally[usertype]++
-        }
-        ok(res, 201, 'Hard-disconnected '
-          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
-    }
-
-    //// A soft-disconnect instruction. @TODO soft-disconnect a specific target
-    else if ('soft-disconnect' === action) {
-        let tally = { admin:0, enduser:0 }, sseRes
-        while ( sseRes = STATE.sseClients.pop() ) {
-            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-            sendSSE(sseRes, 'soft-disconnect', {
-                time: (new Date()).toLocaleTimeString()
-              , ok: 'admin sent a soft-disconnect instruction'
-            })
-            tally[usertype]++
-        }
-        ok(res, 201, "Broadcast 'soft-disconnect' to "
-          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
-    }
-
-    //// Deal with a notification.
-    else if ('notify' === action) {
-        const raw = []
-        req.on( 'data', chunk => raw.push(chunk) )
-           .on( 'end', evt => notify(res, raw) )
-    }
-
-    //// Not found.
-    else error(res, 404, 'See docs, http://oompsh.loop.coop/')
-
-}//servePOST()
+    else if (! OOMPSH.api.admin.POST.includes(action) )
+        error(res, 404, 'See docs, http://oompsh.loop.coop/')
+    else
+        OOMPSH.action[action](req, res, credentials, action, target)
+}
 
 
 
@@ -185,7 +151,78 @@ function onSSEClientClose () { const I='onSSEClientClose'
 
 
 function onSSEClientError () {
-    console.log('onSSEClientError() oompshid ' + res.oompshid + ':', res);
+    console.error('onSSEClientError() oompshid ' + res.oompshid + ':', res);
+}
+
+
+
+
+//// ACTIONS
+
+
+//// Add server actions to the Oompsh namespace.
+OOMPSH.action = {
+
+    //// A version request.
+    version: (req, res) =>
+        ok(res, 200, 'Oompsh ' + OOMPSH.VERSION)
+
+    //// A request to start listening for Server-Sent Events.
+  , connect: (req, res, credentials) => {
+        if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
+            return error(res, 406, "Missing 'Accept: text/event-stream' header")
+        res.oompshid = (Math.random()*1e16).toString(36)
+        res.isAdmin = !! credentials
+        res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
+        res.on('error', onSSEClientError.bind(res) ) // bind client to `this`
+        STATE.sseClients.push(res)
+        beginSSE(req, res)
+    }
+
+    //// A hard-disconnect instruction. @TODO hard-disconnect a specific target
+  , 'hard-disconnect': (req, res) => {
+        let tally = { admin:0, enduser:0 }, sseRes
+        while ( sseRes = STATE.sseClients.pop() ) {
+            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
+            sseRes.end(':bye ' + usertype) // SSE comments begin with a colon
+            tally[usertype]++
+        }
+        ok(res, 200, 'Hard-disconnected '
+          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
+    }
+
+    //// A soft-disconnect instruction. @TODO soft-disconnect a specific target
+  , 'soft-disconnect': (req, res) => {
+        let tally = { admin:0, enduser:0 }, sseRes
+        while ( sseRes = STATE.sseClients.pop() ) {
+            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
+            sendSSE(sseRes, 'soft-disconnect', {
+                time: (new Date()).toLocaleTimeString()
+              , ok: 'admin sent a soft-disconnect instruction'
+            })
+            tally[usertype]++
+        }
+        ok(res, 200, "Broadcast 'soft-disconnect' to "
+          + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
+    }
+
+    //// Deal with a notification.
+  , notify: (req, res) => {
+        const raw = []
+        req.on( 'data', chunk => raw.push(chunk) )
+           .on( 'end', evt => notify(res, raw) )
+    }
+
+}//OOMPSH.action
+
+//// Ensure consistency between OOMPSH.action and OOMPSH.api.
+{
+    const a = OOMPSH.api.admin, e = OOMPSH.api.enduser
+        , l = a.GET.concat(a.POST, e.GET, e.POST)
+    for (let key of l)
+        if (! OOMPSH.action[key]) throw Error(`Missing OOMPSH.action.${key}()`)
+    for (let key in OOMPSH.action)
+        if (! l.includes(key)) throw Error(`Unreachable OOMPSH.action.${key}()`)
 }
 
 
@@ -247,13 +284,12 @@ function beginSSE (req, res) {
 
 
 function notify (res, raw) {
-    // let data
     raw = Buffer.concat(raw).toString()
     try { var data = JSON.parse(raw) } catch (e) {}
     if ('object' !== typeof data || null == data.message)
         return error(res, 406, `Body should be '{ "message":"Hi!" }'`)
     const { admin, enduser } = broadcast(data.message)
-    ok(res, 201, 'Notified '+ admin + ' admin(s), ' + enduser + ' enduser(s)')
+    ok(res, 200, 'Notified '+ admin + ' admin(s), ' + enduser + ' enduser(s)')
 }
 
 
