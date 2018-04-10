@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.7</title>
+<title>Oompsh 0.1.8</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -98,7 +98,7 @@ input#apiv {
     margin-bottom: 0.3em;
 }
 .samples button {
-    width: 18em;
+    width: 15em;
 }
 pre {
     margin-top: 0.3em;
@@ -148,7 +148,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.7</h2>
+<h2>Oompsh 0.1.8</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -179,8 +179,8 @@ const OOMPSH = ROOT.OOMPSH
 //// logServer()
 //// updateValidityHilite()
 //// send()
-//// connect()
-//// disconnect()
+//// begin()
+//// end()
 
 
 //// `logClient()` and `logServer()` both add a line to the onscreen logs.
@@ -239,11 +239,18 @@ function sanitize (text) {
 //// Create admin sample buttons.
 OOMPSH.addSampleButton = function (actions, method, config) {
     for (let action in actions) {
-        const sample = actions[action].sample || {}
-           , $sample = document.createElement('A')
-        sample.action = action
-        sample.method = method
-        $sample.innerHTML = action + '/' + (sample.target || '')
+        const
+            $sample = document.createElement('A')
+          , tip     = actions[action].tip || ''
+          , eg      = actions[action].eg  || ''
+          , sample  = { method, action
+              , target: (eg.match(/([a-z0-9]+)$/)||[])[1] //@TODO better parser
+              , body:   (eg.match(/BODY {(.+)}/)||[])[1]  //@TODO better parser
+            }
+        sample.target = sample.target === action ? '' : sample.target
+        sample.body = sample.body ? '{'+sample.body+'}' : ''
+        $sample.innerHTML = '/' + action + (sample.target?'/'+sample.target:'')
+        $sample.title = tip
         $sample.addEventListener('click', evt => {
             ['method','action','target','body'].forEach( name => {
                 const $el = config['$'+name]
@@ -255,7 +262,7 @@ OOMPSH.addSampleButton = function (actions, method, config) {
         })
         config.$samples.appendChild($sample)
     }
-}
+}//addSampleButton()
 
 
 //// Changes an empty INPUT to blue, valid to green, or invalid to red.
@@ -349,10 +356,10 @@ OOMPSH.send = function (config) {
 
 
 //// Starts an SSE (Server-Sent Events) connection.
-OOMPSH.connect = function (config) {
+OOMPSH.begin = function (config) {
 
     //// Use the `config` object to retrieve variables.
-    const { $apiv, $domain, $user, $pass, $connect, $disconnect, logClient, logServer, usertype } = config
+    const { $apiv, $domain, $user, $pass, $begin, $end, logClient, logServer, usertype } = config
     let apiv     =   $apiv.value.trim()
       , domain   = $domain.value.trim()
       , user     =   $user.value.trim()
@@ -362,22 +369,22 @@ OOMPSH.connect = function (config) {
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
     apiv = apiv ? apiv + '/' : '' // append a slash if `apiv` has been set
 
-    //// Build the URL, eg 'http://localhost:1234/jo:pw/connect/enduser'
-    const url         = domain + apiv + creds + 'connect/' + usertype
-    const urlLog = domain + apiv + credsLog + 'connect/' + usertype
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/begin/enduser'
+    const url         = domain + apiv + creds + 'begin/' + usertype
+    const urlLog = domain + apiv + credsLog + 'begin/' + usertype
 
-    //// Log that `connect()` has been called.
+    //// Log that `begin()` has been called.
     if ('admin' !== usertype && 'enduser' !== usertype)
-        return logClient({ error:'Can’t connect: `usertype` invalid' })
+        return logClient({ error:'Can’t begin: `usertype` invalid' })
     if (config.es)
-        return logClient({ error:'Can’t connect: EventSource already connected' })
+        return logClient({ error:'Can’t begin: EventSource already connected' })
     if (! window.EventSource)
-        return logClient({ error:'Can’t connect: EventSource not supported' })
-    logClient({ ok:`connect() will connect to ${urlLog}` })
+        return logClient({ error:'Can’t begin: EventSource not supported' })
+    logClient({ ok:`begin() will connect to ${urlLog}` })
 
     //// Update the buttons.
-    $connect.className = 'hid'
-    $disconnect.className = ''
+    $begin.className = 'hid'
+    $end.className = ''
 
     const es = config.es = new EventSource(url)
     es.addEventListener('message', evt => {
@@ -396,11 +403,11 @@ OOMPSH.connect = function (config) {
     es.addEventListener('error', evt => {
         evt = evt.originalTarget || evt // prefer the original error event
         if (EventSource.CONNECTING === evt.readyState)
-            disconnect(config, 'of an SSE error (readyState is CONNECTING)')
+            end(config, 'of an SSE error (readyState is CONNECTING)')
         else if (EventSource.OPEN === evt.readyState)
-            disconnect(config, 'of an SSE error (readyState is OPEN)')
+            end(config, 'of an SSE error (readyState is OPEN)')
         else if (EventSource.CLOSED === evt.readyState)
-            disconnect(config, 'of an SSE error (readyState is CLOSED)')
+            end(config, 'of an SSE error (readyState is CLOSED)')
         else if (null != evt.readyState)
             logClient({ error:'Unexpected readyState ' + evt.readyState }) // should not be possible?
         else
@@ -408,29 +415,29 @@ OOMPSH.connect = function (config) {
     }, false)
 
     //// Custom events.
-    es.addEventListener('soft-disconnect', evt =>
-        disconnect(config, 'server told me to'), false)
+    es.addEventListener('soft-end', evt =>
+        end(config, 'server told me to'), false)
 
-}//connect()
+}//begin()
 
 
 //// Closes an SSE (Server-Sent Events) connection.
-function disconnect (config, reason="the ‘Disconnect’ button was clicked") {
+function end (config, reason="the ‘End’ button was clicked") {
 
-    //// Log that `disconnect()` has been called.
-    config.logClient({ ok:'disconnecting because ' + reason })
+    //// Log that `end()` has been called.
+    config.logClient({ ok:'ending because ' + reason })
     if (! config.es)
-        return config.logClient({ error:'Can’t disconnect: EventSource is not connected' })
+        return config.logClient({error:'Can’t end: EventSource not connected'})
 
     //// Close the connection and make `es` falsey.
     config.es.close()
     config.es = null
 
     //// Update the buttons.
-    config.$connect.className = ''
-    config.$disconnect.className = 'hid'
+    config.$begin.className = ''
+    config.$end.className = 'hid'
 }
-OOMPSH.disconnect = disconnect
+OOMPSH.end = end
 
 
 }(this)</script>
@@ -449,8 +456,8 @@ OOMPSH.disconnect = disconnect
 <!-- Admin Client -->
 <hr>
 <div id="admin-samples" class="samples">
-  <button id="admin-connect">Connect Admin Client</button>
-  <button id="admin-disconnect" class="hid">Disconnect Admin Client</button>
+  <button id="admin-begin">Begin Admin SSE Session</button>
+  <button id="admin-end" class="hid">End Admin SSE Session</button>
 </div>
 <div class="table">
   <input  id="admin-method" placeholder="method"></input><input
@@ -476,10 +483,10 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'connect,disconnect,samples,method,user,pass,action,target,body,send,log'
+'begin,end,samples,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
-const { $send, $connect, $disconnect, $samples, $log } = config
+const { $send, $begin, $end, $samples, $log } = config
 
 //// Set up admin logging.
 config.logClient = OOMPSH.logClient.bind($log)
@@ -492,11 +499,10 @@ config.logClient({ ok:'Ready to send' })
 
 //// Set up admin buttons.
 $send.addEventListener( 'click', evt => OOMPSH.send(config) )
-$connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
-$disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
+$begin.addEventListener( 'click', evt => OOMPSH.begin(config) )
+$end.addEventListener( 'click', evt => OOMPSH.end(config) )
 
 //// Create admin sample buttons.
-OOMPSH.addSampleButton({ '':{ sample:{} } }, '', config) // the ‘clear’ button
 OOMPSH.addSampleButton(OOMPSH.api.admin.GET, 'GET', config)
 OOMPSH.addSampleButton(OOMPSH.api.admin.POST, 'POST', config)
 
@@ -508,8 +514,8 @@ OOMPSH.addSampleButton(OOMPSH.api.admin.POST, 'POST', config)
 <!-- Enduser Client -->
 <hr>
 <div id="enduser-samples" class="samples">
-  <button id="enduser-connect">Connect Enduser Client</button>
-  <button id="enduser-disconnect" class="hid">Disconnect Enduser Client</button>
+  <button id="enduser-begin">Begin Enduser SSE Session</button>
+  <button id="enduser-end" class="hid">End Enduser SSE Session</button>
 </div>
 <div class="table">
   <input  id="enduser-method" placeholder="method"></input><input
@@ -536,10 +542,10 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'connect,disconnect,samples,method,user,pass,action,target,body,send,log'
+'begin,end,samples,method,user,pass,action,target,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
-const { $send, $connect, $disconnect, $samples, $log } = config
+const { $send, $begin, $end, $samples, $log } = config
 
 //// Set up enduser logging.
 config.logClient = OOMPSH.logClient.bind($log)
@@ -552,11 +558,10 @@ config.logClient({ ok:'Ready to connect' })
 
 //// Set up enduser buttons.
 $send.addEventListener( 'click', evt => OOMPSH.send(config) )
-$connect.addEventListener( 'click', evt => OOMPSH.connect(config) )
-$disconnect.addEventListener( 'click', evt => OOMPSH.disconnect(config) )
+$begin.addEventListener( 'click', evt => OOMPSH.begin(config) )
+$end.addEventListener( 'click', evt => OOMPSH.end(config) )
 
 //// Create enduser sample buttons.
-OOMPSH.addSampleButton({ '':{ sample:{} } }, '', config) // the ‘clear’ button
 OOMPSH.addSampleButton(OOMPSH.api.enduser.GET, 'GET', config)
 OOMPSH.addSampleButton(OOMPSH.api.enduser.POST, 'POST', config)
 
@@ -600,7 +605,7 @@ OOMPSH.addSampleButton(OOMPSH.api.enduser.POST, 'POST', config)
     $apiv.value   = $apiv.value || OOMPSH.configuration.APIV
     $domain.value = ROOT.OOMPSH.valid.domain.test($domain.value) ? $domain.value
       : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain
-      : ROOT.OOMPSH.remoteURL)
+      : ROOT.OOMPSH.configuration.remoteURL)
     OOMPSH.updateValidityHilite($apiv)
     OOMPSH.updateValidityHilite($domain)
 

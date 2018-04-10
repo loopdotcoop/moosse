@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.1.7 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.1.8 //// The Node.js server //////////////////////////////
 
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -7,9 +7,9 @@ const OOMPSH = global.OOMPSH
 
 //// Initialize mutable server state.
 const STATE = {
-    vvv: OOMPSH.vvv // very very verbose logging
-  , vv:  OOMPSH.vv  // very verbose logging (always true if `vvv` is true)
-  , sseClients: []
+  //   vvv: OOMPSH.vvv // very very verbose logging
+  // , vv:  OOMPSH.vv  // very verbose logging (always true if `vvv` is true)
+    sseClients: []
   , sseID: 0
 }
 
@@ -54,7 +54,7 @@ function server (req, res) {
         parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
       , apiv   = OOMPSH.valid.apiv.test(parts[0])  ? parts[0] : null // mandatory 1st
       , creds  = OOMPSH.valid.creds.test(parts[1]) ? parts[1] : null // optional 2nd
-      , action = creds ? parts[2] : parts[1] // mandatory, 2nd or 3rd
+      , action = (creds ? parts[2] : parts[1]) || '' // mandatory, 2nd or 3rd
       , target = creds ? parts[3] : parts[2] // optional, 3rd or 4th
 
     //// Make sure the request API version matches this script’s API version.
@@ -145,7 +145,7 @@ function onSSEClientClose () { const I='onSSEClientClose'
         STATE.sseClients.splice(i, 1)
         vvok( I,`deleted ${res.oompshid} (index ${i})`)
         vvvok(I,`counted ${STATE.sseClients.length} eventClient(s) left:`)
-        if (vvv) ok('  '+STATE.sseClients.map(res => res.oompshid).join('\n  ') )
+        // if (vvv) ok('  '+STATE.sseClients.map(res => res.oompshid).join('\n  ') )
     }})
 }
 
@@ -163,12 +163,18 @@ function onSSEClientError () {
 //// Add server actions to the Oompsh namespace.
 OOMPSH.action = {
 
+    //// Returns the API as a JSON object.
+    '': (req, res) => {
+        res.writeHead(200)
+        res.end( JSON.stringify(OOMPSH.api, null, 2) + `\n` )
+    }
+
     //// A version request.
-    version: (req, res) =>
+  , version: (req, res) =>
         ok(res, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
 
     //// A request to start listening for Server-Sent Events.
-  , connect: (req, res, credentials) => {
+  , begin: (req, res, credentials) => {
         if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
             return error(res, 406, "Missing 'Accept: text/event-stream' header")
         res.oompshid = (Math.random()*1e16).toString(36)
@@ -179,30 +185,30 @@ OOMPSH.action = {
         beginSSE(req, res)
     }
 
-    //// A hard-disconnect instruction. @TODO hard-disconnect a specific target
-  , 'hard-disconnect': (req, res) => {
+    //// A hard-end instruction. @TODO hard-end a specific target
+  , 'hard-end': (req, res) => {
         let tally = { admin:0, enduser:0 }, sseRes
         while ( sseRes = STATE.sseClients.pop() ) {
             const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
             sseRes.end(':bye ' + usertype) // SSE comments begin with a colon
             tally[usertype]++
         }
-        ok(res, 200, 'Hard-disconnected '
+        ok(res, 200, 'Hard-ended '
           + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 
-    //// A soft-disconnect instruction. @TODO soft-disconnect a specific target
-  , 'soft-disconnect': (req, res) => {
+    //// A soft-end instruction. @TODO soft-end a specific target
+  , 'soft-end': (req, res) => {
         let tally = { admin:0, enduser:0 }, sseRes
         while ( sseRes = STATE.sseClients.pop() ) {
             const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-            sendSSE(sseRes, 'soft-disconnect', {
+            sendSSE(sseRes, 'soft-end', {
                 time: (new Date()).toLocaleTimeString()
-              , ok: 'admin sent a soft-disconnect instruction'
+              , ok: 'admin sent a soft-end instruction'
             })
             tally[usertype]++
         }
-        ok(res, 200, "Broadcast 'soft-disconnect' to "
+        ok(res, 200, "Broadcast 'soft-end' to "
           + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 

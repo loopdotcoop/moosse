@@ -2,8 +2,8 @@
 
 #### A Node.js server which adds realtime push notification to Oom apps
 
-+ __Last update:__  2018/04/09
-+ __Version:__      0.1.7
++ __Last update:__  2018/04/10
++ __Version:__      0.1.8
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -75,7 +75,7 @@ ROOT.OOMPSH = {}
 ```js
 ROOT.OOMPSH.configuration = {
 
-    VERSION: '0.1.7' // the major part of this is also the API version, `APIV`
+    VERSION: '0.1.8' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
@@ -103,17 +103,25 @@ const OOMPSH = ROOT.OOMPSH
 const api = ROOT.OOMPSH.api = {
     enduser: {
         GET:  {
-            version: {}
-          , connect: {}
+            '':        { eg:'GET /v0/'
+                      , tip:'Retrieves a description of the API' }
+          , 'version': { eg:'GET /v0/version'
+                      , tip:'Shows the app’s name and version' }
+          , 'begin':   { eg:"let es = new EventSource('v0/connect')"
+                      , tip:'Starts a new SSE session' }
         }
       , POST: { }
     }
   , admin: { // admins can do everything endusers can do, plus...
         GET:  { }
       , POST: {
-            'soft-disconnect': { sample:{ target:'all' } }
-          , 'hard-disconnect': { sample:{ target:'all' } }
-          , notify:            { sample:{ target:'all', body:'{"message":"Hello Ooms"}' } }
+            'soft-end': { eg:'POST /v0/usr:pwd/soft-disconnect/all'
+                       , tip:'Asks SSE clients to close' }
+          , 'hard-end': { eg:'POST /v0/usr:pwd/hard-disconnect/all'
+                       , tip:'Forces SSE clients to close' }
+          , 'notify':   { eg:'BODY {"message":"Hello SSEs!"}'
+                          + ' POST /v0/usr:pwd/notify/all'
+                       , tip:'Sends a message to SSE clients' }
         }
     }
   , status: { // the server responds with one of these HTTP status codes:
