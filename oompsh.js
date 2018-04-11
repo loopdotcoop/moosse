@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.2.0 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.2.1 //// The Node.js server //////////////////////////////
 
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -24,7 +24,7 @@ const
     adminCredentials = getAdminCredentials()
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
-app.listen( port, () => console.log(`App is listening on port ${port}`) )
+app.listen( port, () => console.log(`Oompsh is listening on port ${port}`) )
 //// Send a ‘heartbeat’ to all SSE clients, once every 10 seconds.
 setInterval ( () => {
     STATE.sseClients.forEach( res => res.write(':tick\n') )
