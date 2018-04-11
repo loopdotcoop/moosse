@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.1.8</title>
+<title>Oompsh 0.2.0</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -53,8 +53,10 @@ button, .samples a {
     border-top: 2px solid #eee;
     border-bottom: 2px solid #bbb;
     cursor: pointer;
-    font-family: Arial, sans-serif;
     transition: background-color 0.2s;
+}
+button {
+    font-family: Arial, sans-serif;
 }
 .samples a {
     font-size: 0.8em;
@@ -109,12 +111,14 @@ pre div {
     margin:0;
     line-height: 1em;
 }
-pre .client  { background: #eee }
-pre .server  { background: #cde }
-pre .client.error { color: red }
-pre .client.ok    { color: black }
-pre .server.error { color: red }
-pre .server.ok    { color: #16a }
+pre .client   { background: #eee }
+pre .server   { background: #cde }
+pre .client.error  { color: red }
+pre .client.ok     { color: black }
+pre .server.error  { color: red }
+pre .server.ok     { color: #16a }
+pre .message  { background: #ced }
+pre .soft-end { background: #cff }
 .table {
     display: table;
     width: 100%;
@@ -148,7 +152,7 @@ pre .server.ok    { color: #16a }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.1.8</h2>
+<h2>Oompsh 0.2.0</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -186,9 +190,9 @@ const OOMPSH = ROOT.OOMPSH
 //// `logClient()` and `logServer()` both add a line to the onscreen logs.
 //// `logClient()` is used to log activity happening in the browser.
 //// `logServer()` is used to log messages from the server.
-OOMPSH.logClient = function (data) { log(this, data, 'client') }
-OOMPSH.logServer = function (data) { log(this, data, 'server') }
-function log ($log, raw, source) {
+OOMPSH.logClient = function (data)      { log(this, data, 'client') }
+OOMPSH.logServer = function (data, evt) { log(this, data, 'server', evt) }
+function log ($log, raw, source, evt='') {
 
     //// Deal with `raw` if it’s a string - often an unparsed JSON string.
     if ('string' === typeof raw) // eg 'Hi', '99', '{"nope":0}' or '{"ok":"!"}'
@@ -214,7 +218,7 @@ function log ($log, raw, source) {
     const label = data.error ? 'error' : 'ok'
     const msg   = sanitize(data.error || data.ok)
     $log.lines.unshift(
-        '<div class="' + label + ' ' + source + '">'
+        '<div class="' + label + ' ' + source + (evt?' '+evt:'') + '">'
       + ('    ' + ++$log.lineTally).slice(-4) // line number
       + ' ' + msg + '</div>' )
     $log.lines = $log.lines.slice(0,10)
@@ -244,18 +248,18 @@ OOMPSH.addSampleButton = function (actions, method, config) {
           , tip     = actions[action].tip || ''
           , eg      = actions[action].eg  || ''
           , sample  = { method, action
-              , target: (eg.match(/([a-z0-9]+)$/)||[])[1] //@TODO better parser
+              , filter: (eg.match(/([a-z0-9]+)$/)||[])[1] //@TODO better parser
               , body:   (eg.match(/BODY {(.+)}/)||[])[1]  //@TODO better parser
             }
-        sample.target = sample.target === action ? '' : sample.target
+        sample.filter = sample.filter === action ? '' : sample.filter
         sample.body = sample.body ? '{'+sample.body+'}' : ''
-        $sample.innerHTML = '/' + action + (sample.target?'/'+sample.target:'')
+        $sample.innerHTML = '/' + action + (sample.filter?'/'+sample.filter:'')
         $sample.title = tip
         $sample.addEventListener('click', evt => {
-            ['method','action','target','body'].forEach( name => {
+            ['method','action','filter','body'].forEach( name => {
                 const $el = config['$'+name]
                 $el.value = sample[name] || ''
-                document.cookie = '$'+name + '=' + sample[name]
+                document.cookie = $el.id + '=' + sample[name]
                 OOMPSH.updateValidityHilite($el)
             })
             if (evt.altKey) setTimeout( () => OOMPSH.send(config), 1)
@@ -266,12 +270,13 @@ OOMPSH.addSampleButton = function (actions, method, config) {
 
 
 //// Changes an empty INPUT to blue, valid to green, or invalid to red.
+//// Also, update wording of the ‘Begin * SSE Session’ button.
 OOMPSH.updateValidityHilite = function ($el) {
 
     //// Get `usertype` and `name` from the INPUT’s ID.
     const
         parts = $el.id.split('-')
-      , name = parts.pop() // eg 'target' or 'apiv'
+      , name = parts.pop() // eg 'filter' or 'apiv'
       , usertype = parts[0] // eg 'admin', 'enduser' (or undefined if apiv)
     if (usertype && ! /^admin$|^enduser$/.test(usertype) )
         throw Error(`usertype '${usertype}' invalid`)
@@ -281,20 +286,32 @@ OOMPSH.updateValidityHilite = function ($el) {
       ? 'valid' : 'invalid' : '' // green, red or blue
 
     //// Show a message after the '#domain' INPUT.
-    if ('domain' !== $el.id) return
-    const $comment = document.querySelector('#domain-comment')
-    if (! $el.value)
-        $comment.innerHTML = ''
-    else if (! OOMPSH.valid.domain.test($el.value) )
-        $comment.innerHTML = 'Error: invalid domain'
-    else if ( OOMPSH.valid.local.test($el.value) )
-        $comment.innerHTML = 'https' === $el.value.slice(0,5)
-          ? '(local SSL server)' : '(local servers don’t have to use https)'
-    else
-        $comment.innerHTML = 'https' === $el.value.slice(0,5)
-          ? '(remote SSL server)' : 'Error: Remote servers must use https'
-    $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
-      ? 'invalid' : $el.value ? 'valid' : ''
+    if ('domain' === $el.id) {
+        const $comment = document.querySelector('#domain-comment')
+        if (! $el.value)
+            $comment.innerHTML = ''
+        else if (! OOMPSH.valid.domain.test($el.value) )
+            $comment.innerHTML = 'Error: invalid domain'
+        else if ( OOMPSH.valid.local.test($el.value) )
+            $comment.innerHTML = 'https' === $el.value.slice(0,5)
+              ? '(local SSL server)' : '(local servers don’t have to use https)'
+        else
+            $comment.innerHTML = 'https' === $el.value.slice(0,5)
+              ? '(remote SSL server)' : 'Error: Remote servers must use https'
+        $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
+          ? 'invalid' : $el.value ? 'valid' : ''
+    }
+
+    //// Update wording of the ‘Begin * SSE Session’ button.
+    if (usertype) {
+        const
+            $user  = document.querySelector('#'+usertype+'-user')
+          , $pass  = document.querySelector('#'+usertype+'-pass')
+          , $begin = document.querySelector('#'+usertype+'-begin')
+        $begin.innerHTML = 'Begin '
+          + ( $user.value.trim() || $pass.value.trim() ? 'Admin' : 'Enduser')
+          + ' SSE Session'
+    }
 
 }//updateValidityHilite()
 
@@ -303,12 +320,12 @@ OOMPSH.updateValidityHilite = function ($el) {
 OOMPSH.send = function (config) {
 
     //// Use the `config` object to retrieve variables.
-    const { $apiv, $domain, $method, $user, $pass, $action, $target, $body, logClient, logServer } = config
+    const { $apiv, $domain, $method, $user, $pass, $action, $filter, $body, logClient, logServer } = config
     let apiv     =   $apiv.value.trim()
       , domain   = $domain.value.trim()
       , method   = $method.value.trim()
       , action   = $action.value.trim()
-      , target   = $target.value.trim()
+      , filter   = $filter.value.trim()
       , body     =   $body.value.trim() || null
       , bodyLog  = body ? sanitize(body) + ' to ' : ''
       , user     =   $user.value.trim()
@@ -317,12 +334,12 @@ OOMPSH.send = function (config) {
       , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
     apiv   = apiv   ? apiv   + '/' : '' // append a slash if `apiv` has been set
-    action = action ? action + '/' : target ? '[action]/' : '' // don’t allow a blank ‘action’ if a ‘target’ is specified
-    target = target ? target + '/' : '' // allow a blank ‘target’
+    action = action ? action + '/' : filter ? '[action]/' : '' // don’t allow a blank ‘action’ if a ‘filter’ is specified
+    filter = filter ? filter + '/' : '' // allow a blank ‘filter’
 
     //// Build the URL, eg 'http://localhost:1234/jo:pw/notify'.
-    const url    = (domain + apiv + creds    + action + target).slice(0,-1)
-    const urlLog = (domain + apiv + credsLog + action + target).slice(0,-1)
+    const url    = (domain + apiv + creds    + action + filter).slice(0,-1)
+    const urlLog = (domain + apiv + credsLog + action + filter).slice(0,-1)
 
     const init = 'GET' === method
       ? {   method                     // *GET, POST, PUT, DELETE, etc.
@@ -394,7 +411,7 @@ OOMPSH.begin = function (config) {
             return logClient({ error:'JSON: ' + err.message })
         }
         if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data)
+        logServer(data, 'message')
     }, false)
 
     es.addEventListener('open', evt =>
@@ -415,8 +432,16 @@ OOMPSH.begin = function (config) {
     }, false)
 
     //// Custom events.
-    es.addEventListener('soft-end', evt =>
-        end(config, 'server told me to'), false)
+    es.addEventListener('soft-end', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'soft-end')
+        end(config, "of 'soft-end' event")
+    }, false)
 
 }//begin()
 
@@ -425,7 +450,7 @@ OOMPSH.begin = function (config) {
 function end (config, reason="the ‘End’ button was clicked") {
 
     //// Log that `end()` has been called.
-    config.logClient({ ok:'ending because ' + reason })
+    config.logClient({ ok:'Closing SSE session because ' + reason })
     if (! config.es)
         return config.logClient({error:'Can’t end: EventSource not connected'})
 
@@ -457,14 +482,14 @@ OOMPSH.end = end
 <hr>
 <div id="admin-samples" class="samples">
   <button id="admin-begin">Begin Admin SSE Session</button>
-  <button id="admin-end" class="hid">End Admin SSE Session</button>
+  <button id="admin-end" class="hid">End SSE Session</button>
 </div>
 <div class="table">
   <input  id="admin-method" placeholder="method"></input><input
           id="admin-user"   placeholder="username"></input><input
           id="admin-pass"   placeholder="password"></input><input
           id="admin-action" placeholder="action"></input><input
-          id="admin-target" placeholder="target"></input>
+          id="admin-filter" placeholder="filter"></input>
 </div>
 <div class="table">
   <input  id="admin-body"   placeholder="body"></input><button
@@ -483,7 +508,7 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'begin,end,samples,method,user,pass,action,target,body,send,log'
+'begin,end,samples,method,user,pass,action,filter,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
 const { $send, $begin, $end, $samples, $log } = config
@@ -515,14 +540,14 @@ OOMPSH.addSampleButton(OOMPSH.api.admin.POST, 'POST', config)
 <hr>
 <div id="enduser-samples" class="samples">
   <button id="enduser-begin">Begin Enduser SSE Session</button>
-  <button id="enduser-end" class="hid">End Enduser SSE Session</button>
+  <button id="enduser-end" class="hid">End SSE Session</button>
 </div>
 <div class="table">
   <input  id="enduser-method" placeholder="method"></input><input
           id="enduser-user"   placeholder="username"></input><input
           id="enduser-pass"   placeholder="password"></input><input
           id="enduser-action" placeholder="action"></input><input
-          id="enduser-target" placeholder="target"></input>
+          id="enduser-filter" placeholder="filter"></input>
 </div>
 <div class="table">
   <input  id="enduser-body"   placeholder="body"></input><button
@@ -542,7 +567,7 @@ const config = {
 //// Add config’s references to the various admin input fields and buttons.
 config.$apiv   = document.querySelector('#apiv')
 config.$domain = document.querySelector('#domain')
-'begin,end,samples,method,user,pass,action,target,body,send,log'
+'begin,end,samples,method,user,pass,action,filter,body,send,log'
    .split(',')
    .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
 const { $send, $begin, $end, $samples, $log } = config
