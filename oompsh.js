@@ -1,5 +1,5 @@
-//// oompsh.js //// 0.2.1 //// The Node.js server //////////////////////////////
-
+//// oompsh.js //// 0.2.2 //// The Node.js server //////////////////////////////
+!function(){
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
 require('./oompsh-config.js')
@@ -22,11 +22,21 @@ const STATE = {
 //// Initialize immutable server state.
 const
     adminCredentials = getAdminCredentials()
+  , docsURL = OOMPSH.configuration.docsURL
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
+
+app.on('error', e => {
+    console.error('Oompsh error: ' + e.message)
+    clearInterval(heartbeat)
+    app.close()
+})
+
+////
 app.listen( port, () => console.log(`Oompsh is listening on port ${port}`) )
+
 //// Send a ‘heartbeat’ to all SSE clients, once every 10 seconds.
-setInterval ( () => {
+const heartbeat = setInterval ( () => {
     STATE.sseClients.forEach( res => res.write(':tick\n') )
 }, 10000)
 
@@ -57,18 +67,18 @@ function server (req, res) {
     const
         parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
       , apiv   = OOMPSH.valid.apiv.test(parts[0])  ? parts[0] : null // mandatory 1st
-      , creds  = OOMPSH.valid.creds.test(parts[1]) ? parts[1] : null // 2nd
+      , creds  = 0 > (parts[1] || '').indexOf(':') ? null : parts[1] // 2nd
       , action = (creds ? parts[2] : parts[1]) || '' // 2nd (or 3rd if creds)
       , filter = (creds ? parts[3] : parts[2]) || '' // 3rd (or 4th if creds)
 
     //// Make sure the request API version matches this script’s API version.
     if (apiv !== OOMPSH.configuration.APIV)
-        return error(res, 501, 'Wrong API version')
+        return error(res, 9200, 501, 'Wrong API version')
 
     //// Deal with the request depending on its method.
     if ('GET'  === req.method) return serveGET(req, res, creds, action, filter)
     if ('POST' === req.method) return servePOST(req, res, creds, action, filter)
-    error(res, 405, 'Use GET, POST or OPTIONS')
+    error(res, 9300, 405, 'Use GET, POST or OPTIONS')
 }
 
 
@@ -88,13 +98,13 @@ function serveFile (req, res) {
     }
 
     //// Not found.
-    else error(res, 404, 'See docs, '+OOMPSH.configuration.docsURL, 'text/plain')
+    else error(res, 9100, 404, 'No such path, see docs, '+docsURL, 'text/plain')
 }
 
 
 //// Serve an OPTIONS request.
 function serveOPTIONS (req, res) {
-    ok(res, 200, "You're probably a CORS preflight", 'text/html')
+    ok(res, 6900, 200, "You're probably a CORS preflight", 'text/html')
 }
 
 
@@ -105,18 +115,18 @@ function serveGET (req, res, credentials, action, filter) {
     //// actions, as well as the ‘enduser’ GET actions.
     if (credentials)
         if (! OOMPSH.valid.creds.test(credentials) )
-            error(res, 401, 'Invalid credentials')
+            error(res, 9210, 401, 'Invalid credentials')
         else if (! adminCredentials[credentials] )
-            error(res, 401, 'Credentials not recognised')
+            error(res, 9211, 401, 'Credentials not recognised')
         else if (! OOMPSH.api.admin.GET[action] )
-            error(res, 404, 'See docs, '+OOMPSH.configuration.docsURL)
+            error(res, 9230, 404, 'No such action, see docs, '+docsURL)
         else
             OOMPSH.action[action](req, res, credentials, action, filter)
 
     //// GET requests without credentials can only access ‘enduser’ GET actions.
     else
         if (! OOMPSH.api.enduser.GET[action] )
-            error(res, 404, 'See docs, '+OOMPSH.configuration.docsURL)
+            error(res, 9231, 404, 'No such action, see docs, '+docsURL)
         else
             OOMPSH.action[action](req, res, credentials, action, filter)
 }
@@ -128,13 +138,13 @@ function servePOST (req, res, credentials, action, filter) {
     //// All POST requests must have valid credentials. Currently, Oompsh does
     //// not offer any POST actions to endusers.
     if (! credentials)
-        error(res, 401, "Can't POST without credentials")
+        error(res, 9222, 401, "Can't POST without credentials")
     else if (credentials && ! OOMPSH.valid.creds.test(credentials) )
-        error(res, 401, 'Invalid credentials')
+        error(res, 9220, 401, 'Invalid credentials')
     else if (credentials && ! adminCredentials[credentials] )
-        error(res, 401, 'Credentials not recognised')
+        error(res, 9221, 401, 'Credentials not recognised')
     else if (! OOMPSH.api.admin.POST[action] )
-        error(res, 404, 'See docs, '+OOMPSH.configuration.docsURL)
+        error(res, 9240, 404, 'No such action, see docs, '+docsURL)
     else
         OOMPSH.action[action](req, res, credentials, action, filter)
 }
@@ -144,22 +154,30 @@ function servePOST (req, res, credentials, action, filter) {
 
 //// EVENT HANDLERS
 
+//// Event handler codes 8000-8999
 function initHandlers () {
 
     //// Broadcast a message to all admin SSE clients when the state changes.
+    //// State-change codes 8100-8199
     HUB.on('state-change', info => {
-        let message
+        let data
         if ('begin' === info.type)
-            message = 'Opened ' + (info.isAdmin ? 'admin' : 'enduser')
-              + ` SSE session, oompshID ${info.oompshID}`
-        else if ('hard-end' === info.type)
-            message = `Admin ${info.enderID} closed the SSE sessions of `
-              + info.tally.admin   + ' admin(s) and '
-              + info.tally.enduser + ' enduser(s)'
+            data = { type:info.type, code:8100
+              , ok: `Opened ${info.isAdmin ? 'admin' : 'enduser'} SSE session`
+              , oompshID: info.oompshID
+            }
         else if ('onSSEClientClose' === info.type)
-            message = (info.isAdmin ? 'Admin' : 'Enduser')
-              + ` ${info.oompshID}'s SSE session closed`
-        broadcast(message, 'admin')
+            data = { type:info.type, code:8101
+              , ok: `${info.isAdmin ? 'Admin' : 'Enduser'} SSE session closed`
+              , oompshID: info.oompshID
+            }
+        else if ('hard-end' === info.type)
+            data = { type:info.type, code:8102
+              , ok: `An admin closed the SSE sessions of `
+                  + info.tally.admin   + ' admin(s) and '
+                  + info.tally.enduser + ' enduser(s)'
+            }
+        broadcast(data, 'admin')
     })
 
 }
@@ -200,18 +218,19 @@ OOMPSH.action = {
 
     //// A version request.
   , 'version': (req, res, credentials, action, filter) =>
-        ok(res, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
+        ok(res, 6100, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
 
 
     //// Send a soft-end event.
   , 'soft-end': (req, res, credentials, action, filter) => {
 
-        const tally = broadcast('An admin POSTed a soft-end instruction'
+        const tally = broadcast(
+            { ok:'An admin POSTed a soft-end instruction', code:8010, type:'soft-end' }
           , filter, res, 'soft-end')
 
         //// Respond to the original request.
         if (tally)
-            ok(res, 200, "Broadcast 'soft-end' to "
+            ok(res, 7000, 200, "Broadcast 'soft-end' to "
               + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 
@@ -234,7 +253,7 @@ OOMPSH.action = {
 
         //// Finish validating the request.
         if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
-            return error(res, 406, "Missing 'Accept: text/event-stream' header")
+            return error(res, 9400, 406, "Missing 'Accept: text/event-stream' header")
 
         //// Store the response in `sseClients`, and add meta and listeners.
         STATE.sseClients.push(res)
@@ -252,6 +271,7 @@ OOMPSH.action = {
         })
         sendSSE(res, null, { // `null` makes an event named 'message'
             beginAt, oompshID, isAdmin
+          , code: (isAdmin ? 8001 : 8000)
           , ok: (res.isAdmin?'Admin':'Enduser') + ' SSE session is open'
         })
 
@@ -260,7 +280,7 @@ OOMPSH.action = {
     }
 
 
-    //// A hard-end instruction. @TODO hard-end a specific SSE client
+    //// A hard-end instruction.
   , 'hard-end': (req, res, credentials, action, filter) => {
 
         //// Validate `filter` and define `usertypeFilter` and `oompshIDFilter`.
@@ -270,7 +290,7 @@ OOMPSH.action = {
           , oompshIDFilter = match[1]
           , usertypeFilter = match[2] && 'all' !== filter ? filter : false
         if (! match.length)
-            return error(res, 406, 'Filter fails '+OOMPSH.valid.standardFilter)
+            return error(res, 9260, 406, "Filter not 'admin|enduser|all' or an oompshID")
 
         //// End the SSE session of any SSE clients which pass the filter, and
         //// remove them from the `sseClients` array.
@@ -283,18 +303,18 @@ OOMPSH.action = {
             ) {
                 newSseClients.push(sseRes)
             } else {
-                sseRes.end(':bye!') // SSE comments begin with a colon
+                sseRes.end(':bye!\n') // SSE comments begin with a colon
                 tally[usertype]++
             }
         })
         STATE.sseClients = newSseClients
 
         //// Respond to the original request.
-        ok(res, 200, 'Hard-ended '
+        ok(res, 7010, 200, 'Hard-ended '
           + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
 
         //// Server state has changed so fire an event.
-        HUB.fire('state-change', { action, tally, enderID:res.oompshID })
+        HUB.fire('state-change', { type:action, tally })
     }
 
 }//OOMPSH.action
@@ -315,27 +335,28 @@ OOMPSH.action = {
 
 
 //// Sends a response after a successful GET or POST request. Usage:
-//// ok(`res`, 200, 'That worked great!', 'text/plain'), which writes:
-//// '{ "ok":"That worked great!" }'
-function ok (res, status, remarks, contentType=null) {
+//// ok(`res`, 99, 200, 'That worked great!', 'text/plain'), which writes:
+//// '{ "ok":"That worked great!", "status":200, "code":99 }'
+function ok (res, code, status, remarks, contentType=null) {
     const headers = contentType ? { 'Content-Type': contentType } : {}
     remarks = remarks.replace(/\\/g, '\\\\')
     remarks = remarks.replace(/"/g, '\\"')
     res.writeHead(status, headers)
-    res.end(`{ "ok":"${remarks}" }\n`)
+    res.end(`{ "code":${code}, "ok":"${remarks}", "status":${status} }\n`)
     return true
 }
 
 
 //// Sends a response after a GET or POST request which failed. Usage:
-//// error(`res`, 501, 'Wrong API version'), which writes:
-//// '{ "error":"NOT IMPLEMENTED: Wrong API version" }'
-function error (res, status, remarks, contentType=null) {
+//// error(`res`, 9200, 501, 'Wrong API version'), which writes:
+//// '{ "error":"NOT IMPLEMENTED: Wrong API version", "status":501, "code":9200 }'
+function error (res, code, status, remarks, contentType=null) {
     const headers = contentType ? { 'Content-Type': contentType } : {}
     remarks = remarks.replace(/\\/g, '\\\\')
     remarks = remarks.replace(/"/g, '\\"')
     res.writeHead(status, headers)
-    res.end(`{ "error":"${OOMPSH.api.status[status]}: ${remarks}" }\n`)
+    res.end(`{ "code":${code}, "error":"${OOMPSH.api.status[status]}: `
+      + `${remarks}", "status":${status} }\n`)
     return false
 }
 
@@ -358,16 +379,20 @@ function getAdminCredentials () {
 function notify (req, res, credentials, action, filter, raw) {
     raw = Buffer.concat(raw).toString()
     try { var data = JSON.parse(raw) } catch (e) {}
-    if ('object' !== typeof data || null == data.message)
-        return error(res, 406, `Body should be '{ "message":"Hi!" }'`)
-    const tally = broadcast(data.message, filter, res)
+    if ('object' !== typeof data || null == data || null == data.message)
+        return error(res, 9310, 406, `Body should be '{ "message":"Hi!" }'`)
+    const tally = broadcast({
+        code: 8030
+      , ok: data.message
+      , type: 'notify'
+    }, filter, res)
     if (tally)
-        ok(res, 200, 'Notified '+ tally.admin + ' admin(s), '
+        ok(res, 7020, 200, 'Notified '+ tally.admin + ' admin(s), '
           + tally.enduser + ' enduser(s)')
 }
 
 
-function broadcast (payload, filter, res, eventName) {
+function broadcast (data, filter, res, eventName) {
 
     //// Validate `filter` and define `usertypeFilter` and `oompshIDFilter`.
     const
@@ -377,17 +402,14 @@ function broadcast (payload, filter, res, eventName) {
       , usertypeFilter = match[2] && 'all' !== filter ? filter : false
 // console.log(`"${filter}"`, `"${oompshIDFilter}"`, `"${usertypeFilter}"`);
     if (res && ! match.length) //@TODO error-check internal `broadcast()` calls
-        return error(res, 406, 'Filter fails '+OOMPSH.valid.standardFilter)
+        return error(res, 9261, 406, "Filter not 'admin|enduser|all' or an oompshID")
 
     //// Send an event to any SSE clients which pass the filter.
     STATE.sseClients.forEach( sseRes => {
         const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
         if (oompshIDFilter && oompshIDFilter !== sseRes.oompshID) return
         if (usertypeFilter && 0 > usertype.indexOf(usertypeFilter) ) return
-        sendSSE(sseRes, eventName, {
-            time: (new Date()).toLocaleTimeString()
-          , ok: payload
-        })
+        sendSSE(sseRes, eventName, data)
         tally[usertype]++
     })
     return tally
@@ -395,11 +417,20 @@ function broadcast (payload, filter, res, eventName) {
 
 
 function sendSSE (res, eventName=null, data) {
-    res.write('id: ' + (OOMPSH.sseID++) + '\n')
+    data.sentAt = data.sentAt || (new Date())*1 // unix timestamp in ms
+    const sortedKeys = Object.keys(data).sort()
+    const sortedData = {}
+    sortedKeys.forEach( key => sortedData[key] = data[key] )
+    res.write('id: ' + (STATE.sseID++) + '\n')
     if (eventName) res.write('event: ' + eventName + '\n')
-    JSON.stringify(data, 2).split('\n').forEach(
+    JSON.stringify(sortedData, 2).split('\n').forEach(
         line => {
             res.write('data: ' + line + '\n')
         })
     res.write('\n')
 }
+
+
+
+
+}()

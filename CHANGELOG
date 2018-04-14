@@ -19,4 +19,5 @@
 0.1.7 oompsh-config.js (was oompsh-lib.js) built by config-builder.js
 0.1.8 GET ‘/v0/’ responds with a description of the API
 0.2.0 An admin’s SSE feed logs server state changes
-0.2.1 Initial test.js with three basic `test_JSON_GET()` tests
+0.2.2 Initial test.js with three basic `test_JSON_GET()` tests
+0.2.2 Fairly complete tests, covering all API 'codes'

@@ -1,4 +1,4 @@
-//// oompsh-config.js //// 0.2.1 //// Config shared by browsers and servers ////
+//// oompsh-config.js //// 0.2.2 //// Config shared by browsers and servers ////
 
 /**
 ## Namespace
@@ -20,7 +20,7 @@ ROOT.OOMPSH = {}
 
 ROOT.OOMPSH.configuration = {
 
-    VERSION: '0.2.1' // the major part of this is also the API version, `APIV`
+    VERSION: '0.2.2' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
@@ -108,6 +108,7 @@ const api = ROOT.OOMPSH.api = {
       // , 500: 'INTERNAL SERVER ERROR'
       , 501: 'NOT IMPLEMENTED'
     }
+  , code: 6000 // every API response has a code
 }
 
 //// Duplicate all enduser actions to admin.
