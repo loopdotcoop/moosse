@@ -638,8 +638,8 @@
                 })
                 setTimeout( () => {
                     req.abort()
-                }, 10)
-            }, 10) // close the SSE session after 10 milliseconds
+                }, 100)
+            }, 100) // close the SSE session after 100 milliseconds
             res.on('data', chunk => {
                 raw += chunk
                 if ( /^id: /.test(chunk) )
@@ -669,15 +669,11 @@
                     else
                         throw Error('No assertion?')
                 } catch (e) {
-                    if ('Cannot convert undefined or null to object' === e.message)
-                        e.message = currTest + '. ' + e.message
+                    // if ('Cannot convert undefined or null to object' === e.message)
+                    //     e.message = currTest + '. ' + e.message
                     fails.push(e.message)
                 }
-                if (tests[currTest])
-                    setTimeout( () => {
-                        tests[currTest++](currTest)
-                    }, 50)
-                else finish()
+                if (tests[currTest]) tests[currTest++](currTest); else finish()
             })
         })
         req.end()
