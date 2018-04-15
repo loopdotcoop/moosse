@@ -318,8 +318,8 @@
           , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/<oompshID>`, null, j => eq(
             j[2].comment, 'bye!'
             , ct+". Enduser should receive a 'bye!' comment after 'hard-end/<oompshID>'" ) )
-          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/admin`, null, j => eq(
-            undefined, j[2]
+          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/admin`, null, j => ok(
+            'bye!' !== j[j.length-1].comment
             , ct+". Enduser should not receive a 'bye!' comment after 'hard-end/admin'" ) )
 
             //// Receives 'notify/enduser'.
@@ -411,8 +411,8 @@
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => eq(
             j[5].ok, 'An admin closed the SSE sessions of 0 admin(s) and 0 enduser(s)'
             , ct+". Admin should receive a log after 'hard-end/enduser'" ) )
-          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => eq(
-            undefined, j[6]
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => ok(
+            'bye!' !== j[j.length-1].comment
             , ct+". Admin should not receive a 'bye!' comment after 'hard-end/enduser'" ) )
 
             //// Admin logs that a 'hard-end/enduser' happened.
@@ -485,7 +485,7 @@
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
           }, ct+". Admins should log that admin SSE sessions begin (SSE/8100)" )
-              , `/v0/${creds}/begin`, 1 )
+              , `/v0/${creds}/begin` )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[7], {
                 type: 'onSSEClientClose'
