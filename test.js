@@ -11,6 +11,7 @@
     module.exports = (cb) => {
         callback = cb
         currTest = 0
+        capturedDescs = {}
         if (tests[currTest]) tests[currTest++](currTest); else finish()
     }
 
