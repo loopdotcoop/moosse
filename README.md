@@ -3,7 +3,7 @@
 #### A Node.js server which adds realtime push notification to Oom apps
 
 + __Last update:__  2018/04/14
-+ __Version:__      0.2.2
++ __Version:__      0.2.3
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -75,7 +75,7 @@ ROOT.OOMPSH = {}
 ```js
 ROOT.OOMPSH.configuration = {
 
-    VERSION: '0.2.2' // the major part of this is also the API version, `APIV`
+    VERSION: '0.2.3' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
@@ -150,6 +150,8 @@ const api = ROOT.OOMPSH.api = {
           , 'notify':   { eg:'BODY {"message":"Hello SSEs!"}'
                           + ' POST /v0/usr:pwd/notify/all'
                        , tip:'Sends a message to SSE clients' }
+          , 'test':     { eg:'POST /v0/usr:pwd/test'
+                       , tip:'Runs the test-suite' }
         }
     }
   , status: { // the server responds with one of these HTTP status codes:

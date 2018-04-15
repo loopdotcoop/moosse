@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.2.2 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.2.3 //// The Node.js server //////////////////////////////
 !function(){
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -23,6 +23,7 @@ const STATE = {
 const
     adminCredentials = getAdminCredentials()
   , docsURL = OOMPSH.configuration.docsURL
+  , runTests = require('./test.js')
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
 
@@ -60,8 +61,10 @@ function server (req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept') //@TODO cull this list to the minimum
 
-    //// All OPTIONS requests succeed.
-    if ('OPTIONS' === req.method) return serveOPTIONS(req, res) //@TODO remove this, if it doesn’t help CORS
+    //// All OPTIONS requests succeed. Anything else, except GET or POST, fails.
+    if ('OPTIONS' === req.method) return serveOPTIONS(req, res)
+    if ('GET' !== req.method && 'POST' !== req.method)
+        return error(res, 9300, 405, 'Use GET, POST or OPTIONS')
 
     //// Parse the four standard parts of the URL.
     const
@@ -78,7 +81,6 @@ function server (req, res) {
     //// Deal with the request depending on its method.
     if ('GET'  === req.method) return serveGET(req, res, creds, action, filter)
     if ('POST' === req.method) return servePOST(req, res, creds, action, filter)
-    error(res, 9300, 405, 'Use GET, POST or OPTIONS')
 }
 
 
@@ -243,6 +245,14 @@ OOMPSH.action = {
     }
 
 
+    //// Runs the test-suite.
+  , 'test': (req, res, credentials, action, filter) => {
+        runTests( results => {
+            ok(res, 7030, 200, 'Test results: ' + results )
+        })
+    }
+
+
 
 
     //// STATE-CHANGING ACTIONS
@@ -341,6 +351,7 @@ function ok (res, code, status, remarks, contentType=null) {
     const headers = contentType ? { 'Content-Type': contentType } : {}
     remarks = remarks.replace(/\\/g, '\\\\')
     remarks = remarks.replace(/"/g, '\\"')
+    remarks = remarks.replace(/\n/g, '\\n')
     res.writeHead(status, headers)
     res.end(`{ "code":${code}, "ok":"${remarks}", "status":${status} }\n`)
     return true
@@ -354,6 +365,7 @@ function error (res, code, status, remarks, contentType=null) {
     const headers = contentType ? { 'Content-Type': contentType } : {}
     remarks = remarks.replace(/\\/g, '\\\\')
     remarks = remarks.replace(/"/g, '\\"')
+    remarks = remarks.replace(/\n/g, '\\n')
     res.writeHead(status, headers)
     res.end(`{ "code":${code}, "error":"${OOMPSH.api.status[status]}: `
       + `${remarks}", "status":${status} }\n`)
