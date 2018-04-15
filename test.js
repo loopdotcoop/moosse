@@ -221,21 +221,21 @@
             //// Codes 7000-7999
 
             //// Soft-End.
-          , ct => test_JSON('POST', `/v0/${creds}/soft-end/admin`, j => eq(j,
-            { ok: `Broadcast 'soft-end' to 0 admin(s), 0 enduser(s)`
+          , ct => test_JSON('POST', `/v0/${creds}/soft-end/admin`, j => compare(j,
+            { ok: /Broadcast 'soft-end' to \d+ admin\(s\), \d+ enduser\(s\)/
             , status:200, code:7000 }
             , ct+`. POST '/v0/<creds>/soft-end/admin' should respond ok (200/7000)`) )
 
             //// Hard-End.
-          , ct => test_JSON('POST', `/v0/${creds}/hard-end/all`, j => eq(j,
-            { ok: `Hard-ended 0 admin(s), 0 enduser(s)`
+          , ct => test_JSON('POST', `/v0/${creds}/hard-end/all`, j => compare(j,
+            { ok: /Hard-ended \d+ admin\(s\), \d+ enduser\(s\)/
             , status:200, code:7010 }
             , ct+`. POST '/v0/<creds>/hard-end/all' should respond ok (200/7010)`) )
 
             //// Notify.
           , ct => test_JSON('POST', `/v0/${creds}/notify/enduser`,
-            { message: 'A test message' }, j => eq(j,
-            { ok: 'Notified 0 admin(s), 0 enduser(s)'
+            { message: 'A test message' }, j => compare(j,
+            { ok: /Notified \d+ admin\(s\), \d+ enduser\(s\)/
             , status:200, code:7020 }
             , ct+`. POST '/v0/<creds>/notify/enduser' should respond ok (200/7020)`) )
 
@@ -673,7 +673,11 @@
                         e.message = currTest + '. ' + e.message
                     fails.push(e.message)
                 }
-                if (tests[currTest]) tests[currTest++](currTest); else finish()
+                if (tests[currTest])
+                    setTimeout( () => {
+                        tests[currTest++](currTest)
+                    }, 50)
+                else finish()
             })
         })
         req.end()
