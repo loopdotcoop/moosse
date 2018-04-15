@@ -2,8 +2,8 @@
 
 #### A Node.js server which adds realtime push notification to Oom apps
 
-+ __Last update:__  2018/04/14
-+ __Version:__      0.2.3
++ __Last update:__  2018/04/15
++ __Version:__      0.2.4
 
 [Homepage](http://oompsh.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
@@ -75,7 +75,7 @@ ROOT.OOMPSH = {}
 ```js
 ROOT.OOMPSH.configuration = {
 
-    VERSION: '0.2.3' // the major part of this is also the API version, `APIV`
+    VERSION: '0.2.4' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.

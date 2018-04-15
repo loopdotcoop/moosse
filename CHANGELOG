@@ -22,3 +22,4 @@
 0.2.1 Initial test.js with three basic `test_JSON_GET()` tests
 0.2.2 Fairly complete tests, covering all API codes
 0.2.3 POST ‘/v0/<creds>/test’ responds with test results
+0.2.4 test.js checks that all codes used in oompsh.js have tests

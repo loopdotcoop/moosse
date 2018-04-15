@@ -1,4 +1,4 @@
-//// config-builder.js //// 0.2.3 //// Converts README.md to *-config.js ///////
+//// config-builder.js //// 0.2.4 //// Converts README.md to *-config.js ///////
 
 !function(){
 
@@ -34,12 +34,17 @@
       , creds = Object.keys( getAdminCredentials() )[0]
       , { docsURL } = OOMPSH.configuration
 
+        ////
+      , capturedDescs = {}
+
         //// Import library functionality.
       , { spawn } = require('child_process')
       , { request } = require('http')
       , { ok, deepEqual } = require('assert')
-      , is = ok
-      , eq = deepEqual
+      , is = (value, desc, dontCaptureDesc) => {
+            if (! dontCaptureDesc) captureDesc(desc); ok(value, desc) }
+      , eq = (actual, expected, desc, dontCaptureDesc) => {
+            if (! dontCaptureDesc) captureDesc(desc); deepEqual(actual, expected, desc) }
 
         //// Start an Oompsh server (standalone mode only).
       , server = standaloneMode ? spawn('node', ['oompsh.js']) : {
@@ -353,12 +358,12 @@
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[1], {
                 beginAt: /^\d{13}$/
-              , code: 8001
+              , code: 8000
               , isAdmin: true
               , ok: 'Admin SSE session is open'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". First admin-data should confirm SSE session has begun (SSE/8001)" ) )
+          }, ct+". First admin-data should confirm SSE session has begun (SSE/8000)" ) )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[3], {
                 code: 8100
@@ -393,7 +398,7 @@
             , ct+". 'soft-end/enduser' should not be received by an admin" ) )
 
             //// Receives 'hard-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
-            ////@TODO test that the connected is also ended from the server
+            ////@TODO test that the connection is also ended from the server
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/admin`, null, j => eq(
             j[4].comment, 'bye!'
             , ct+". Admin should receive a 'bye!' comment after 'hard-end/admin'" ) )
@@ -409,6 +414,15 @@
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => eq(
             undefined, j[6]
             , ct+". Admin should not receive a 'bye!' comment after 'hard-end/enduser'" ) )
+
+            //// Admin logs that a 'hard-end/enduser' happened.
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/begin`, null, j => compare(j[5], {
+                type: 'hard-end'
+              , code: 8102
+              , ok: /^An admin closed the SSE sessions of \d+ admin\(s\) and \d+ enduser\(s\)$/
+              , sentAt: /^\d{13}$/
+          }, ct+". Admins should log that enduser SSE sessions begin (SSE/8102)" )
+              ,`/v0/${creds}/hard-end/enduser` )
 
             //// Receives 'notify/admin'.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/notify/admin`
@@ -471,7 +485,7 @@
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
           }, ct+". Admins should log that admin SSE sessions begin (SSE/8100)" )
-              , `/v0/${creds}/begin` )
+              , `/v0/${creds}/begin`, 1 )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[7], {
                 type: 'onSSEClientClose'
@@ -542,15 +556,71 @@
 
     ////
     function finish () {
+
+        //// Record the number of passes or fails.
         let out = ''
         if (! fails.length)
             out = 'All ' + currTest + ' tests passed!'
         else
             out = 'Failed ' + fails.length + ' of ' + currTest + ' tests:\n'
                 + '  ' + fails.join('\n  ')
+
+        //// Check that the statuses and codes are consistent.
+        for (let code in capturedDescs) {
+            const firstStatus = capturedDescs[code][0]
+            let inconsistencies = 0
+            capturedDescs[code].forEach( status => {
+                if (status !== firstStatus) inconsistencies++
+            })
+            if (inconsistencies)
+                out += `\nCode ${code} has status inconsistencies`
+        }
+
+        //// Check that all codes in oompsh.js have tests.
+        const oompshSrc = ( require('fs').readFileSync('oompsh.js')+'' ).split('\n')
+        oompshSrc.forEach( (line, num) => {
+            const // eg 'error(res, 9210, 401, ' or 'ok(res, 6100, 200, '
+                match = line.match(/(error|ok)\(res,\s*(\d{4}),\s*(\d{3}),\s*/) || []
+              , okOrError = match[1]
+              , code = match[2]
+              , status = match[3]
+            if (! code) return
+            if (! capturedDescs[code])
+                return out += `\noompsh.js:${num+1} contains ${okOrError}-code ${
+                code}, test.js does not`
+                + ('7030'===code ? '\n  (prevents infinite recursion)' : '')
+            if (status !== capturedDescs[code][0])
+                return out += `\noompsh.js:${num+1} ${okOrError}-code ${code
+                } has status ${status}, but in test.js it is status ${
+                capturedDescs[code][0]}`
+            if (capturedDescs[code].foundInOompshSrc)
+                return out += `\noompsh.js:${num+1} redeclares code ${code}`
+            capturedDescs[code].foundInOompshSrc = true
+        })
+        oompshSrc.forEach( (line, num) => {
+            const // eg 'code:8010'
+                match = line.match(/code:\s*(\d{4})/) || []
+              , code = match[1]
+            if (! code) return
+            if (! capturedDescs[code])
+                return out += `\noompsh.js:${num+1} contains code ${
+                code}, test.js does not`
+            if (capturedDescs[code].foundInOompshSrc)
+                return out += `\noompsh.js:${num+1} redeclares code ${code}`
+            capturedDescs[code].foundInOompshSrc = true
+        })
+
+        //// Check that test.js does not contain codes which oompsh.js does not.
+        for (let code in capturedDescs) {
+            if (! capturedDescs[code].foundInOompshSrc)
+                out += `\ntest.js contains code ${code}, oompsh.js does not`
+        }
+
+
         if (standaloneMode) {
             server.kill()
             console.log(out)
+            // console.log(capturedDescs);
         } else {
             if (callback) callback(out)
             callback = null
@@ -620,7 +690,7 @@
 
 
     //// Run a test which temporarily opens an SSE session.
-    function test_SSE (ssePath, postPath, postBody, jsonAssertion, lateGetPath, stdout) {
+    function test_SSE (ssePath, secondPath, postBody, jsonAssertion, lateThirdPath, stdout) {
         const req = request({
             hostname: 'localhost'
           , port: server.port
@@ -631,11 +701,14 @@
         }, res => {
             let json = [], raw = '', oompshID
             setTimeout( () => {
-                if (! lateGetPath)
+                if (! lateThirdPath)
                     return req.abort()
-                test_JSON('GET', lateGetPath, null, null, true, {
-                    Accept: 'text/event-stream'
-                })
+                if ( '/begin' === lateThirdPath.slice(-6) )
+                    test_JSON('GET', lateThirdPath, null, null, true, {
+                        Accept: 'text/event-stream'
+                    })
+                else
+                    test_JSON('POST', lateThirdPath, null, null, true)
                 setTimeout( () => {
                     req.abort()
                 }, 100)
@@ -652,12 +725,14 @@
                     json.push({ comment:(chunk.slice(1)+'').trim() })
                 if (stdout) // helps debug tests
                     process.stdout.write(chunk+'')
-                if (2 === json.length && postPath) {
+                if (2 === json.length && secondPath) {
                     oompshID = json[1].oompshID
-                    postPath = postPath.replace('<oompshID>', oompshID)
-                    if (stdout) console.log('\n> test.js will POST', postPath)
-                    test_JSON('POST', postPath, postBody, null, true)
-                    postPath = false // prevent double-POST
+                    secondPath = secondPath.replace('<oompshID>', oompshID)
+                    if (stdout) console.log('\n> test.js will POST', secondPath)
+                    test_JSON(
+                        '/begin' === secondPath.slice(-6) ? 'GET' : 'POST'
+                      , secondPath, postBody, null, true)
+                    secondPath = false // prevent double-POST
                 }
             })
             res.on('end', () => {
@@ -682,20 +757,33 @@
 
     ////
     function compare (actual, model, desc) {
+        captureDesc(desc)
         if ('object' !== typeof actual)
             throw Error('`compare()` was passed '
               + (typeof actual) + ' to `actual`. `currTest` is ' + currTest)
         const actualKeys = Object.keys(actual).sort()
         const modelKeys = Object.keys(model).sort()
-        eq(actualKeys, modelKeys, desc + '\n    (actual vs model keys mismatch)')
+        eq(actualKeys, modelKeys, desc + '\n    (actual vs model keys mismatch)', true)
         modelKeys.forEach( modelKey => {
             const actualVal = actual[modelKey]
             const modelVal = model[modelKey]
             if ( 'function' === typeof modelVal.test) // eg a RegExp
-                ok( modelVal.test(actualVal), desc + `\n    (invalid '${modelKey}')` )
+                ok(modelVal.test(actualVal), desc + `\n    (invalid '${modelKey}')`, true)
             else
-                eq(modelVal, actualVal, desc + `\n    (different '${modelKey}')` )
+                eq(modelVal, actualVal, desc + `\n    (different '${modelKey}')`, true)
         })
+    }
+
+
+    ////
+    function captureDesc (desc) {
+        const
+            match = ( desc.match(/\((\d{3}|SSE)\/(\d{4})\)/) || [] )
+          , status = match[1]
+          , code = match[2]
+        if (! code) return // code `0` should not exist
+        capturedDescs[code] = capturedDescs[code] || []
+        capturedDescs[code].push(status)
     }
 
 }()

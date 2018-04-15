@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.2.3 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.2.4 //// The Node.js server //////////////////////////////
 !function(){
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -216,6 +216,7 @@ OOMPSH.action = {
     '': (req, res, credentials, action, filter) => {
         res.writeHead(200)
         res.end( JSON.stringify(OOMPSH.api, null, 2) + `\n` )
+        // OOMPSH.api includes the key/value `code:6000`
     }
 
     //// A version request.
@@ -281,7 +282,7 @@ OOMPSH.action = {
         })
         sendSSE(res, null, { // `null` makes an event named 'message'
             beginAt, oompshID, isAdmin
-          , code: (isAdmin ? 8001 : 8000)
+          , code: 8000
           , ok: (res.isAdmin?'Admin':'Enduser') + ' SSE session is open'
         })
 
@@ -323,7 +324,7 @@ OOMPSH.action = {
         ok(res, 7010, 200, 'Hard-ended '
           + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
 
-        //// Server state has changed so fire an event.
+        //// Server state is about to change so fire an event.
         HUB.fire('state-change', { type:action, tally })
     }
 

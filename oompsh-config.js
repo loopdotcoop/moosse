@@ -1,4 +1,4 @@
-//// oompsh-config.js //// 0.2.3 //// Config shared by browsers and servers ////
+//// oompsh-config.js //// 0.2.4 //// Config shared by browsers and servers ////
 
 /**
 ## Namespace
@@ -20,7 +20,7 @@ ROOT.OOMPSH = {}
 
 ROOT.OOMPSH.configuration = {
 
-    VERSION: '0.2.3' // the major part of this is also the API version, `APIV`
+    VERSION: '0.2.4' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
