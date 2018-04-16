@@ -1,4 +1,4 @@
-//// config-builder.js //// 0.2.4 //// Converts README.md to *-config.js ///////
+//// config-builder.js //// 0.2.5 //// Converts README.md to *-config.js ///////
 
 !function(){
 
@@ -19,8 +19,9 @@
     require('./oompsh-config.js')
 
     ////
-    let currTest = 0
-      , callback
+    let callback
+      , currTest = 0
+      , capturedDescs = {}
 
     const
 
@@ -33,10 +34,7 @@
       , OOMPSH = global.OOMPSH
       , VERSION = require('./package.json').version
       , creds = Object.keys( getAdminCredentials() )[0]
-      , { docsURL } = OOMPSH.configuration
-
-        ////
-      , capturedDescs = {}
+      , { apiURL, validatorsURL } = OOMPSH.configuration
 
         //// Import library functionality.
       , { spawn } = require('child_process')
@@ -69,23 +67,23 @@
 
 
 
-            //// ERRORS AS EXPECTED
-            //// Codes 9000-9999
+            //// 9000-9999: Errors.
 
-            //// Oompsh startup errors: 9000-9099
+
+            //// 9000-9099: Oompsh startup errors.
             //// @TODO
 
 
-            //// Errors serving a file: 9100-9199
+            //// 9100-9199: Errors serving a file.
 
             //// No such file.
             ct => test_plain_GET('/no-such-path!', j => eq(j, // ct=currentTest
             `{ "code":9100, "error":"NOT FOUND: No such path, see docs, ${
-            docsURL}", "status":404 }\n`
+            apiURL}", "status":404 }\n`
             , ct+`. GET '/no-such-path!' should error (404/9100)`) )
 
 
-            //// URL-format errors: 9200-9299
+            //// 9200-9299: URL-format errors.
 
             //// Wrong API version
           , ct => test_JSON('GET', '/v123', j => eq(j, // j=json
@@ -135,17 +133,17 @@
 
             //// GET invalid action.
           , ct => test_JSON('GET', `/v0/${creds}/no-such-action!`, j => eq(j,
-            { error: 'NOT FOUND: No such action, see docs, ' + docsURL
+            { error: 'NOT FOUND: No such action, see docs, ' + apiURL
             , status:404, code:9230 }
             , ct+`. GET '/v0/<creds>/no-such-action!' should error (404/9230)`) )
           , ct => test_JSON('GET', `/v0/no-such-action!`, j => eq(j,
-            { error: 'NOT FOUND: No such action, see docs, ' + docsURL
+            { error: 'NOT FOUND: No such action, see docs, ' + apiURL
             , status:404, code:9231 }
             , ct+`. GET '/v0/no-such-action!' should error (404/9231)`) )
 
             //// POST invalid action.
           , ct => test_JSON('POST', `/v0/${creds}/no-such-action!`, j => eq(j,
-            { error: 'NOT FOUND: No such action, see docs, ' + docsURL
+            { error: 'NOT FOUND: No such action, see docs, ' + apiURL
             , status:404, code:9240 }
             , ct+`. POST '/v0/<creds>/no-such-action!' should error (404/9240)`) )
 
@@ -154,16 +152,16 @@
 
             //// POST invalid filter.
           , ct => test_JSON('POST', `/v0/${creds}/hard-end/nope!`, j => eq(j,
-            { error: 'NOT ACCEPTABLE: Filter not \'admin|enduser|all\' or an oompshID'
+            { error: 'NOT ACCEPTABLE: Invalid filter, see standardFilter, ' + validatorsURL
             , status:406, code:9260 }
             , ct+`. POST '/v0/<creds>/hard-end/nope!' should error (406/9260)`) )
           , ct => test_JSON('POST', `/v0/${creds}/soft-end/nope!`, j => eq(j,
-            { error: 'NOT ACCEPTABLE: Filter not \'admin|enduser|all\' or an oompshID'
-            , status:406, code:9261 }
-            , ct+`. POST '/v0/<creds>/soft-end/nope!' should error (406/9261)`) )
+            { error: 'NOT ACCEPTABLE: Invalid filter, see standardFilter, ' + validatorsURL
+            , status:406, code:9260 }
+            , ct+`. POST '/v0/<creds>/soft-end/nope!' should error (406/9260)`) )
 
 
-            //// Header and body errors: 9300-9399
+            //// 9300-9399: Header and body errors.
 
             //// Wrong method.
           , ct => test_JSON('DELETE', `/`, j => eq(j,
@@ -183,9 +181,10 @@
             , status:406, code:9310 }
             , ct+`. POST '/v0/<creds>/notify/all' with malformed body should error (406/9310)`) )
 
-            //// SSE session errors: 9400-9499
 
-            //// Begin SSE session errors.
+            //// 9400-9499: SSE session errors.
+
+            //// 'begin' SSE session errors.
           , ct => test_JSON('GET', `/v0/begin`, j => eq(j,
             { error: "NOT ACCEPTABLE: Missing 'Accept: text/event-stream' header"
             , status:406, code:9400 }
@@ -193,63 +192,8 @@
 
 
 
-            //// GET AND OPTIONS TESTS
-            //// Codes 6000-6999
 
-            //// API description.
-          , ct => test_JSON('GET', '/v0', j => eq(j,
-            OOMPSH.api // code 6000
-            , ct+`. GET '/v0' should retrieve the Oompsh API (200/6000)`) )
-
-            //// Version.
-          , ct => test_JSON('GET', '/v0/version', j => eq(j,
-            { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
-            , ct+`. GET '/v0/version' should retrieve the Oompsh version (200/6100)`) )
-          , ct => test_JSON('GET', `/v0/${creds}/version`, j => eq(j,
-            { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
-            , ct+`. GET '/v0/<creds>/version' should retrieve the Oompsh version (200/6100)`) )
-
-            //// OPTIONS always responds ok.
-          , ct => test_JSON('OPTIONS', '/', j => eq(j,
-            { ok:"You're probably a CORS preflight", status:200, code:6900 }
-            , ct+`. OPTIONS '/' should just be ok (200/6900)`) )
-          , ct => test_JSON('OPTIONS', '/v0', j => eq(j,
-            { ok:"You're probably a CORS preflight", status:200, code:6900 }
-            , ct+`. OPTIONS '/v0' should just be ok (200/6900)`) )
-          , ct => test_JSON('OPTIONS', '/anything-in-here', j => eq(j,
-            { ok:"You're probably a CORS preflight", status:200, code:6900 }
-            , ct+`. OPTIONS '/anything-in-here' should just be ok (200/6900)`) )
-
-
-
-
-            //// POST TESTS
-            //// Codes 7000-7999
-
-            //// Soft-End.
-          , ct => test_JSON('POST', `/v0/${creds}/soft-end/admin`, j => compare(j,
-            { ok: /Broadcast 'soft-end' to \d+ admin\(s\), \d+ enduser\(s\)/
-            , status:200, code:7000 }
-            , ct+`. POST '/v0/<creds>/soft-end/admin' should respond ok (200/7000)`) )
-
-            //// Hard-End.
-          , ct => test_JSON('POST', `/v0/${creds}/hard-end/all`, j => compare(j,
-            { ok: /Hard-ended \d+ admin\(s\), \d+ enduser\(s\)/
-            , status:200, code:7010 }
-            , ct+`. POST '/v0/<creds>/hard-end/all' should respond ok (200/7010)`) )
-
-            //// Notify.
-          , ct => test_JSON('POST', `/v0/${creds}/notify/enduser`,
-            { message: 'A test message' }, j => compare(j,
-            { ok: /Notified \d+ admin\(s\), \d+ enduser\(s\)/
-            , status:200, code:7020 }
-            , ct+`. POST '/v0/<creds>/notify/enduser' should respond ok (200/7020)`) )
-
-
-
-
-            //// FILE TESTS
-            //// No codes
+            //// No codes: File.
 
             //// Homepage.
           , ct => test_plain_GET('/', d => is(
@@ -267,14 +211,70 @@
 
 
 
-            //// ENDUSER SSE
-            //// Codes 8000-8999
+            //// 6000-8999: Ok.
 
-            //// Basically works.
+
+            //// 6000-6999: GET and OPTIONS.
+
+
+            //// 6000-6099: API, configuration etc.
+          , ct => test_JSON('GET', '/v0', j => eq(j,
+            OOMPSH.api // code 6000
+            , ct+`. GET '/v0' should retrieve the Oompsh API (200/6000)`) )
+
+            //// 6100-6199: Version.
+          , ct => test_JSON('GET', '/v0/version', j => eq(j,
+            { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
+            , ct+`. GET '/v0/version' should retrieve the Oompsh version (200/6100)`) )
+          , ct => test_JSON('GET', `/v0/${creds}/version`, j => eq(j,
+            { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
+            , ct+`. GET '/v0/<creds>/version' should retrieve the Oompsh version (200/6100)`) )
+
+            //// 6200-6899: @TODO
+
+            //// 6900-6999: OPTIONS (always responds ok).
+          , ct => test_JSON('OPTIONS', '/', j => eq(j,
+            { ok:"You're probably a CORS preflight", status:200, code:6900 }
+            , ct+`. OPTIONS '/' should just be ok (200/6900)`) )
+          , ct => test_JSON('OPTIONS', '/v0', j => eq(j,
+            { ok:"You're probably a CORS preflight", status:200, code:6900 }
+            , ct+`. OPTIONS '/v0' should just be ok (200/6900)`) )
+          , ct => test_JSON('OPTIONS', '/anything-in-here', j => eq(j,
+            { ok:"You're probably a CORS preflight", status:200, code:6900 }
+            , ct+`. OPTIONS '/anything-in-here' should just be ok (200/6900)`) )
+
+
+            //// 7000-7999: POST.
+
+            //// 7010: Soft-End.
+          , ct => test_JSON('POST', `/v0/${creds}/soft-end/admin`, j => compare(j,
+            { ok: /Broadcast 'soft-end' to \d+ admin\(s\), \d+ enduser\(s\)/
+            , status:200, code:7010 }
+            , ct+`. POST '/v0/<creds>/soft-end/admin' should respond ok (200/7010)`) )
+
+            //// 7020: Hard-End.
+          , ct => test_JSON('POST', `/v0/${creds}/hard-end/all`, j => compare(j,
+            { ok: /Hard-ended \d+ admin\(s\), \d+ enduser\(s\)/
+            , status:200, code:7020 }
+            , ct+`. POST '/v0/<creds>/hard-end/all' should respond ok (200/7020)`) )
+
+            //// 7030: Notify.
+          , ct => test_JSON('POST', `/v0/${creds}/notify/enduser`,
+            { message: 'A test message' }, j => compare(j,
+            { ok: /Notified \d+ admin\(s\), \d+ enduser\(s\)/
+            , status:200, code:7030 }
+            , ct+`. POST '/v0/<creds>/notify/enduser' should respond ok (200/7030)`) )
+
+            //// 7990: Test.
+            //// To prevent infinite recursion, don’t test test :-)
+
+
+            //// 8000-8999: Enduser SSE.
+
+            //// 8000: Enduser basically works.
           , ct => test_SSE('/v0/begin', null, null, j => ok(
             null != j[0] && null != j[0].id && null != j[1] && null != j[1].ok
             , ct+". Enduser 'begin' should basically work" ) )
-
           , ct => test_SSE(`/v0/begin`, null, null, j => compare(j[1], {
                 beginAt: /^\d{13}$/
               , code: 8000
@@ -282,13 +282,15 @@
               , ok: 'Enduser SSE session is open'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". First enduser-data should confirm SSE session has begun (SSE/8000)" ) )
+          }, ct+". First enduser-data should confirm SSE session has begun (200/8000)" ) )
 
-            //// Receives 'soft-end/enduser'.
+            //// 8010: Soft-End.
+            //// Receives 'soft-end/enduser', '.../all', '.../<oompshID>', not '.../admin'.
+/* @TODO fix
           , ct => test_SSE('/v0/begin', `/v0/${creds}/soft-end/enduser`, null, j => eq(
             j[3].event, 'soft-end'
             , ct+". 'soft-end/all' enduser SSE event should be 'soft-end'" ) )
-
+*/
           , ct => test_SSE(`/v0/begin`, `/v0/${creds}/soft-end/enduser`
               , null, j => compare(j[4], {
                 code: 8010
@@ -296,8 +298,6 @@
               , sentAt: /^\d{13}$/
               , type: 'soft-end'
           }, ct+". Second enduser-data should show soft-end, after 'soft-end/enduser' (SSE/8010)" ) )
-
-            //// Receives 'soft-end/all' and '.../<oompshID>', but not '.../admin'.
           , ct => test_SSE('/v0/begin', `/v0/${creds}/soft-end/all`, null, j => eq(
             'An admin POSTed a soft-end instruction', j[4].ok
             , ct+". 'soft-end/all' enduser data should contain expected 'ok' value (SSE/8010)" ) )
@@ -308,22 +308,47 @@
             undefined, j[4]
             , ct+". 'soft-end/admin' should not be received by an enduser" ) )
 
+            //// 8020: Hard-End.
             //// Receives 'hard-end/enduser', '.../all', '.../<oompshID>', not '.../admin'.
+            //// This is before the ‘:bye!’ comment, and being disconnected.
+          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/all`, null, j => eq(
+            j[3].event, 'hard-end'
+            , ct+". 'hard-end/all' enduser SSE event should be 'hard-end'" ) )
+          , ct => test_SSE(`/v0/begin`, `/v0/${creds}/hard-end/enduser`
+              , null, j => compare(j[4], {
+                code: 8020
+              , ok: 'An admin POSTed a hard-end instruction'
+              , sentAt: /^\d{13}$/
+              , type: 'hard-end'
+          }, ct+". Second enduser-data should show hard-end, after 'hard-end/enduser' (SSE/8020)" ) )
+          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/all`, null, j => eq(
+            'An admin POSTed a hard-end instruction', j[4].ok
+            , ct+". 'hard-end/all' enduser data should contain expected 'ok' value (SSE/8020)" ) )
+          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/<oompshID>`, null, j => eq(
+            'An admin POSTed a hard-end instruction', j[4].ok
+            , ct+". 'hard-end/<oompshID>' enduser data should contain expected 'ok' value (SSE/8020)" ) )
+          , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/admin`, null, j => eq(
+            undefined, j[4]
+            , ct+". 'hard-end/admin' should not be received by an enduser" ) )
+
+            //// :bye! Receives a final comment before being disconnected.
+            //// Only for 'hard-end/enduser', '.../all', '.../<oompshID>', not '.../admin'.
             ////@TODO test that the connected is also ended from the server
           , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/enduser`, null, j => eq(
-            j[2].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Enduser should receive a 'bye!' comment after 'hard-end/enduser'" ) )
           , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/all`, null, j => eq(
-            j[2].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Enduser should receive a 'bye!' comment after 'hard-end/all'" ) )
           , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/<oompshID>`, null, j => eq(
-            j[2].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Enduser should receive a 'bye!' comment after 'hard-end/<oompshID>'" ) )
           , ct => test_SSE('/v0/begin', `/v0/${creds}/hard-end/admin`, null, j => ok(
             'bye!' !== j[j.length-1].comment
             , ct+". Enduser should not receive a 'bye!' comment after 'hard-end/admin'" ) )
 
-            //// Receives 'notify/enduser'.
+            //// 8030: Notify.
+            //// Receives 'notify/enduser', '.../all', '.../<oompshID>', not '.../admin'.
           , ct => test_SSE(`/v0/begin`, `/v0/${creds}/notify/enduser`
               , { message:'Messaging the endusers' }, j => compare(j[3], {
                 code: 8030
@@ -331,8 +356,6 @@
               , sentAt: /^\d{13}$/
               , type: 'notify'
           }, ct+". Second enduser-data should show notification, after 'notify/enduser' (SSE/8030)" ) )
-
-            //// Receives 'notify/all' and '.../<oompshID>', but not '.../admin'.
           , ct => test_SSE('/v0/begin', `/v0/${creds}/notify/all`
             , { message:'Message to all' }, j => eq(
             'Message to all', j[3].ok
@@ -347,16 +370,12 @@
             , ct+". 'notify/admin' should not be received by an enduser" ) )
 
 
+            //// 8000-8999: Admin SSE.
 
-
-            //// ADMIN SSE
-            //// Codes 8000-8999
-
-            //// Basically works.
+            //// 8000: Admin basically works.
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => ok( // j=json
             null != j[0] && null != j[0].id && null != j[1] && null != j[1].ok
             , ct+". Admin 'begin' should basically work" ) )
-
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[1], {
                 beginAt: /^\d{13}$/
               , code: 8000
@@ -364,21 +383,20 @@
               , ok: 'Admin SSE session is open'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". First admin-data should confirm SSE session has begun (SSE/8000)" ) )
-
+          }, ct+". First admin-data should confirm SSE session has begun (200/8000)" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[3], {
-                code: 8100
-              , ok: 'Opened admin SSE session'
+                code: 8500
+              , ok: 'An admin SSE session opened'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
               , type: 'begin'
-          }, ct+". Second admin-data should log its own SSE-begin (SSE/8100)" ) )
+          }, ct+". Second admin-data should log its own SSE-begin (SSE/8500)" ) )
 
-            //// Receives 'soft-end/admin'.
+            //// 8010: Soft-End.
+            //// Receives 'hard-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/soft-end/admin`, null, j => eq(
             j[5].event, 'soft-end'
             , ct+". 'soft-end/all' admin SSE event should be 'soft-end'" ) )
-
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/soft-end/admin`
               , null, j => compare(j[6], {
                 code: 8010
@@ -386,46 +404,68 @@
               , sentAt: /^\d{13}$/
               , type: 'soft-end'
           }, ct+". Third admin-data should show soft-end, after 'soft-end/admin' (SSE/8010)" ) )
-
-            //// Receives 'soft-end/all' and '.../<oompshID>', but not '.../enduser'.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/soft-end/all`, null, j => eq(
             'An admin POSTed a soft-end instruction', j[6].ok
-            , ct+". 'soft-end/all' admin data should contain expected 'ok' value" ) )
+            , ct+". 'soft-end/all' admin data should contain expected 'ok' value (SSE/8010)" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/soft-end/<oompshID>`, null, j => eq(
             'An admin POSTed a soft-end instruction', j[6].ok
-            , ct+". 'soft-end/<oompshID>' admin data should contain expected 'ok' value" ) )
+            , ct+". 'soft-end/<oompshID>' admin data should contain expected 'ok' value (SSE/8010)" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/soft-end/enduser`, null, j => eq(
             undefined, j[5]
             , ct+". 'soft-end/enduser' should not be received by an admin" ) )
 
+            //// 8020: Hard-End.
             //// Receives 'hard-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
-            ////@TODO test that the connection is also ended from the server
+            //// This is before the ‘:bye!’ comment, and being disconnected.
+/* @TODO fix
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/all`, null, j => eq(
+            j[5].event, 'hard-end'
+            , ct+". 'hard-end/all' admin SSE event should be 'hard-end'" ) )
+*/
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/admin`
+              , null, j => compare(j[6], {
+                code: 8020
+              , ok: 'An admin POSTed a hard-end instruction'
+              , sentAt: /^\d{13}$/
+              , type: 'hard-end'
+          }, ct+". Second admin-data should show hard-end, after 'hard-end/admin' (SSE/8020)" ) )
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/all`, null, j => eq(
+            'An admin POSTed a hard-end instruction', j[6].ok
+            , ct+". 'hard-end/all' admin data should contain expected 'ok' value (SSE/8020)" ) )
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/<oompshID>`, null, j => eq(
+            'An admin POSTed a hard-end instruction', j[6].ok
+            , ct+". 'hard-end/<oompshID>' admin data should contain expected 'ok' value (SSE/8020)" ) )
+          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => eq(
+            undefined, j[6]
+            , ct+". 'hard-end/enduser' should not be received by an admin" ) )
+
+            //// :bye! Receives a final comment before being disconnected.
+            //// Only for 'hard-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
+            ////@TODO test that the connected is also ended from the server
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/admin`, null, j => eq(
-            j[4].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Admin should receive a 'bye!' comment after 'hard-end/admin'" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/all`, null, j => eq(
-            j[4].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Admin should receive a 'bye!' comment after 'hard-end/all'" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/<oompshID>`, null, j => eq(
-            j[4].comment, 'bye!'
+            j[j.length-1].comment, 'bye!'
             , ct+". Admin should receive a 'bye!' comment after 'hard-end/<oompshID>'" ) )
-          , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => eq(
-            j[5].ok, 'An admin closed the SSE sessions of 0 admin(s) and 0 enduser(s)'
-            , ct+". Admin should receive a log after 'hard-end/enduser'" ) )
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/hard-end/enduser`, null, j => ok(
             'bye!' !== j[j.length-1].comment
             , ct+". Admin should not receive a 'bye!' comment after 'hard-end/enduser'" ) )
 
-            //// Admin logs that a 'hard-end/enduser' happened.
+            //// 8520: Admin logs that a 'hard-end/enduser' happened.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/begin`, null, j => compare(j[5], {
                 type: 'hard-end'
-              , code: 8102
+              , code: 8520
               , ok: /^An admin closed the SSE sessions of \d+ admin\(s\) and \d+ enduser\(s\)$/
               , sentAt: /^\d{13}$/
-          }, ct+". Admins should log that enduser SSE sessions begin (SSE/8102)" )
+          }, ct+". Admins should log that enduser SSE sessions begin (SSE/8520)" )
               ,`/v0/${creds}/hard-end/enduser` )
 
-            //// Receives 'notify/admin'.
+            //// 8030: Notify.
+            //// Receives 'notify/admin', '.../all', '.../<oompshID>', not '.../enduser'.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/notify/admin`
               , { message:'Messaging the admins' }, j => compare(j[5], {
                 code: 8030
@@ -433,8 +473,6 @@
               , sentAt: /^\d{13}$/
               , type: 'notify'
           }, ct+". Third admin-data should show notification, after 'notify/admin' (SSE/8030)" ) )
-
-            //// Receives 'notify/all' and '.../<oompshID>', but not '.../enduser'.
           , ct => test_SSE(`/v0/${creds}/begin`, `/v0/${creds}/notify/all`
             , { message:'Message to all' }, j => eq(
             'Message to all', j[5].ok
@@ -457,20 +495,20 @@
             //// Admin logs that an enduser SSE session opens and closes.
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[5], {
                 type: 'begin'
-              , code: 8100
-              , ok: 'Opened enduser SSE session'
+              , code: 8500
+              , ok: 'An enduser SSE session opened'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". Admins should log that enduser SSE sessions begin (SSE/8100)" )
+          }, ct+". Admins should log that enduser SSE sessions begin (SSE/8500)" )
               ,`/v0/begin` )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[7], {
                 type: 'onSSEClientClose'
-              , code: 8101
-              , ok: 'Enduser SSE session closed'
+              , code: 8510
+              , ok: 'An enduser SSE session closed'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". Admins should log that enduser SSE sessions end (SSE/8101)" )
+          }, ct+". Admins should log that enduser SSE sessions end (SSE/8510)" )
               ,`/v0/begin` )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => eq(
@@ -478,23 +516,23 @@
               , ct+". Admins should log enduser oompshIDs consistently" )
               ,`/v0/begin` )
 
-            //// Admin logs that a second admin SSE session opens and closes.
+            //// 8500: Admin logs that a second admin SSE session opens and closes.
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[5], {
                 type: 'begin'
-              , code: 8100
-              , ok: 'Opened admin SSE session'
+              , code: 8500
+              , ok: 'An admin SSE session opened'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". Admins should log that admin SSE sessions begin (SSE/8100)" )
+          }, ct+". Admins should log that admin SSE sessions begin (SSE/8500)" )
               , `/v0/${creds}/begin` )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => compare(j[7], {
                 type: 'onSSEClientClose'
-              , code: 8101
-              , ok: 'Admin SSE session closed'
+              , code: 8510
+              , ok: 'An admin SSE session closed'
               , oompshID: OOMPSH.valid.oompshID
               , sentAt: /^\d{13}$/
-          }, ct+". Admins should log that admin SSE sessions end (SSE/8101)" )
+          }, ct+". Admins should log that admin SSE sessions end (SSE/8510)" )
               ,`/v0/${creds}/begin` )
 
           , ct => test_SSE(`/v0/${creds}/begin`, null, null, j => eq(
@@ -589,13 +627,13 @@
             if (! capturedDescs[code])
                 return out += `\noompsh.js:${num+1} contains ${okOrError}-code ${
                 code}, test.js does not`
-                + ('7030'===code ? '\n  (prevents infinite recursion)' : '')
+                + ('7990'===code ? '\n  (prevents infinite recursion)' : '')
             if (status !== capturedDescs[code][0])
                 return out += `\noompsh.js:${num+1} ${okOrError}-code ${code
                 } has status ${status}, but in test.js it is status ${
                 capturedDescs[code][0]}`
             if (capturedDescs[code].foundInOompshSrc)
-                return out += `\noompsh.js:${num+1} redeclares code ${code}`
+                return out += `\noompsh.js:${num+1} redeclares ${okOrError}-code ${code}`
             capturedDescs[code].foundInOompshSrc = true
         })
         oompshSrc.forEach( (line, num) => {
@@ -617,7 +655,34 @@
                 out += `\ntest.js contains code ${code}, oompsh.js does not`
         }
 
+        //// Check that all codes in oompsh-config.js have tests.
+        [].concat(
+            Object.keys(OOMPSH.api.ok)
+          , Object.keys(OOMPSH.api.error)
+        ).forEach( code => {
+            if (OOMPSH.api.ok[code] && OOMPSH.api.error[code])
+                return out += `\noompsh-config.js contains code ${code
+                } in its OOMPSH.api.ok AND OOMPSH.api.error`
+            const okOrError = OOMPSH.api.ok[code] ? 'ok' : 'error'
+            const status = OOMPSH.api[okOrError][code].status
+            if (! capturedDescs[code])
+                return out += `\noompsh-config.js contains ${okOrError}-code ${
+                code}, test.js does not`
+                + ('7990'===code ? '\n  (prevents infinite recursion)' : '')
+            if (status && status+'' !== capturedDescs[code][0])
+                return out += `\noompsh-config.js ${okOrError}-code ${
+                code} has status ${status}, but in test.js it is status ${
+                capturedDescs[code][0]}`
+            capturedDescs[code].foundInOompshConfig = true
+        })
 
+        //// Check that test.js does not contain codes which oompsh-config.js does not.
+        for (let code in capturedDescs) {
+            if (! capturedDescs[code].foundInOompshConfig)
+                out += `\ntest.js contains code ${code}, oompsh-config.js does not`
+        }
+
+        ////
         if (standaloneMode) {
             server.kill()
             console.log(out)

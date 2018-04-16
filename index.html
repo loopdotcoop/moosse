@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.2.4</title>
+<title>Oompsh 0.2.5</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -119,6 +119,7 @@ pre .server.error  { color: red }
 pre .server.ok     { color: #16a }
 pre .message  { background: #ced }
 pre .soft-end { background: #cff }
+pre .hard-end { background: #fdd }
 .table {
     display: table;
     width: 100%;
@@ -152,7 +153,7 @@ pre .soft-end { background: #cff }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.2.4</h2>
+<h2>Oompsh 0.2.5</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -441,6 +442,18 @@ OOMPSH.begin = function (config) {
         if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
         logServer(data, 'soft-end')
         end(config, "of 'soft-end' event")
+    }, false)
+
+    //// Custom events.
+    es.addEventListener('hard-end', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'hard-end')
+        end(config, "of 'hard-end' event")
     }, false)
 
 }//begin()

@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.2.4 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.2.5 //// The Node.js server //////////////////////////////
 !function(){
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -22,7 +22,7 @@ const STATE = {
 //// Initialize immutable server state.
 const
     adminCredentials = getAdminCredentials()
-  , docsURL = OOMPSH.configuration.docsURL
+  , { apiURL, validatorsURL } = OOMPSH.configuration
   , runTests = require('./test.js')
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
@@ -100,7 +100,7 @@ function serveFile (req, res) {
     }
 
     //// Not found.
-    else error(res, 9100, 404, 'No such path, see docs, '+docsURL, 'text/plain')
+    else error(res, 9100, 404, 'No such path, see docs, '+apiURL, 'text/plain')
 }
 
 
@@ -121,14 +121,14 @@ function serveGET (req, res, credentials, action, filter) {
         else if (! adminCredentials[credentials] )
             error(res, 9211, 401, 'Credentials not recognised')
         else if (! OOMPSH.api.admin.GET[action] )
-            error(res, 9230, 404, 'No such action, see docs, '+docsURL)
+            error(res, 9230, 404, 'No such action, see docs, '+apiURL)
         else
             OOMPSH.action[action](req, res, credentials, action, filter)
 
     //// GET requests without credentials can only access ‘enduser’ GET actions.
     else
         if (! OOMPSH.api.enduser.GET[action] )
-            error(res, 9231, 404, 'No such action, see docs, '+docsURL)
+            error(res, 9231, 404, 'No such action, see docs, '+apiURL)
         else
             OOMPSH.action[action](req, res, credentials, action, filter)
 }
@@ -146,7 +146,7 @@ function servePOST (req, res, credentials, action, filter) {
     else if (credentials && ! adminCredentials[credentials] )
         error(res, 9221, 401, 'Credentials not recognised')
     else if (! OOMPSH.api.admin.POST[action] )
-        error(res, 9240, 404, 'No such action, see docs, '+docsURL)
+        error(res, 9240, 404, 'No such action, see docs, '+apiURL)
     else
         OOMPSH.action[action](req, res, credentials, action, filter)
 }
@@ -160,21 +160,21 @@ function servePOST (req, res, credentials, action, filter) {
 function initHandlers () {
 
     //// Broadcast a message to all admin SSE clients when the state changes.
-    //// State-change codes 8100-8199
+    //// State-change codes 8500-8499
     HUB.on('state-change', info => {
         let data
         if ('begin' === info.type)
-            data = { type:info.type, code:8100
-              , ok: `Opened ${info.isAdmin ? 'admin' : 'enduser'} SSE session`
+            data = { type:info.type, code:8500
+              , ok: `An ${info.isAdmin ? 'admin' : 'enduser'} SSE session opened`
               , oompshID: info.oompshID
             }
         else if ('onSSEClientClose' === info.type)
-            data = { type:info.type, code:8101
-              , ok: `${info.isAdmin ? 'Admin' : 'Enduser'} SSE session closed`
+            data = { type:info.type, code:8510
+              , ok: `An ${info.isAdmin ? 'admin' : 'enduser'} SSE session closed`
               , oompshID: info.oompshID
             }
         else if ('hard-end' === info.type)
-            data = { type:info.type, code:8102
+            data = { type:info.type, code:8520
               , ok: `An admin closed the SSE sessions of `
                   + info.tally.admin   + ' admin(s) and '
                   + info.tally.enduser + ' enduser(s)'
@@ -233,7 +233,7 @@ OOMPSH.action = {
 
         //// Respond to the original request.
         if (tally)
-            ok(res, 7000, 200, "Broadcast 'soft-end' to "
+            ok(res, 7010, 200, "Broadcast 'soft-end' to "
               + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
     }
 
@@ -249,7 +249,7 @@ OOMPSH.action = {
     //// Runs the test-suite.
   , 'test': (req, res, credentials, action, filter) => {
         runTests( results => {
-            ok(res, 7030, 200, 'Test results: ' + results )
+            ok(res, 7990, 200, 'Test results: ' + results )
         })
     }
 
@@ -293,15 +293,21 @@ OOMPSH.action = {
 
     //// A hard-end instruction.
   , 'hard-end': (req, res, credentials, action, filter) => {
-
-        //// Validate `filter` and define `usertypeFilter` and `oompshIDFilter`.
         const
             tally = { admin:0, enduser:0 }
+          , filters = filterGen(res, OOMPSH.valid.standardFilter, filter)
+        if (! filters) return // invalid `filter`, `filterGen()` has sent error
+/*
           , match = filter.match(OOMPSH.valid.standardFilter) || []
           , oompshIDFilter = match[1]
           , usertypeFilter = match[2] && 'all' !== filter ? filter : false
         if (! match.length)
-            return error(res, 9260, 406, "Filter not 'admin|enduser|all' or an oompshID")
+            return error(res, 9260, 406, 'Invalid filter, see standardFilter, ' + validURL)
+*/
+        //// Warn SSE clients shortly before disconnecting them.
+        broadcast(
+            { ok:'An admin POSTed a hard-end instruction', code:8020, type:'hard-end' }
+          , filter, res, 'hard-end')
 
         //// End the SSE session of any SSE clients which pass the filter, and
         //// remove them from the `sseClients` array.
@@ -309,8 +315,8 @@ OOMPSH.action = {
         STATE.sseClients.forEach( sseRes => {
             const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
             if (
-                (oompshIDFilter && oompshIDFilter !== sseRes.oompshID)
-             || (usertypeFilter && 0 > usertype.indexOf(usertypeFilter) )
+                (filters.oompshID && filters.oompshID !== sseRes.oompshID)
+             || (filters.usertype && 0 > usertype.indexOf(filters.usertype) )
             ) {
                 newSseClients.push(sseRes)
             } else {
@@ -321,10 +327,10 @@ OOMPSH.action = {
         STATE.sseClients = newSseClients
 
         //// Respond to the original request.
-        ok(res, 7010, 200, 'Hard-ended '
+        ok(res, 7020, 200, 'Hard-ended '
           + tally.admin + ' admin(s), ' + tally.enduser + ' enduser(s)')
 
-        //// Server state is about to change so fire an event.
+        //// Server state has changed so fire an event.
         HUB.fire('state-change', { type:action, tally })
     }
 
@@ -400,28 +406,22 @@ function notify (req, res, credentials, action, filter, raw) {
       , type: 'notify'
     }, filter, res)
     if (tally)
-        ok(res, 7020, 200, 'Notified '+ tally.admin + ' admin(s), '
+        ok(res, 7030, 200, 'Notified '+ tally.admin + ' admin(s), '
           + tally.enduser + ' enduser(s)')
 }
 
 
 function broadcast (data, filter, res, eventName) {
-
-    //// Validate `filter` and define `usertypeFilter` and `oompshIDFilter`.
     const
         tally = { admin:0, enduser:0 }
-      , match = filter.match(OOMPSH.valid.standardFilter) || []
-      , oompshIDFilter = match[1]
-      , usertypeFilter = match[2] && 'all' !== filter ? filter : false
-// console.log(`"${filter}"`, `"${oompshIDFilter}"`, `"${usertypeFilter}"`);
-    if (res && ! match.length) //@TODO error-check internal `broadcast()` calls
-        return error(res, 9261, 406, "Filter not 'admin|enduser|all' or an oompshID")
+      , filters = filterGen(res, OOMPSH.valid.standardFilter, filter)
+    if (! filters) return // invalid `filter`, `filterGen()` has sent error
 
     //// Send an event to any SSE clients which pass the filter.
     STATE.sseClients.forEach( sseRes => {
         const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-        if (oompshIDFilter && oompshIDFilter !== sseRes.oompshID) return
-        if (usertypeFilter && 0 > usertype.indexOf(usertypeFilter) ) return
+        if (filters.oompshID && filters.oompshID !== sseRes.oompshID) return
+        if (filters.usertype && 0 > usertype.indexOf(filters.usertype) ) return
         sendSSE(sseRes, eventName, data)
         tally[usertype]++
     })
@@ -443,6 +443,20 @@ function sendSSE (res, eventName=null, data) {
     res.write('\n')
 }
 
+
+//// Validate `filter` and define `filters.usertype` and `filters.oompshID`.
+function filterGen (res, validator, filter) {
+    const //@TODO deal with validators other than OOMPSH.valid.standardFilter
+        match = filter.match(validator) || []
+      , oompshID = match[1]
+      , usertype = match[2] && 'all' !== filter ? filter : false
+// console.log(`"${filter}"`, `"${oompshIDFilter}"`, `"${usertypeFilter}"`);
+    if (! match.length) //@TODO error-check internal `broadcast()` calls
+        error(res, 9260, 406
+          , 'Invalid filter, see standardFilter, ' + validatorsURL)
+    else
+        return { oompshID, usertype }
+}
 
 
 
