@@ -1,4 +1,4 @@
-//// oompsh.js //// 0.2.5 //// The Node.js server //////////////////////////////
+//// oompsh.js //// 0.3.0 //// The Node.js server //////////////////////////////
 !function(){
 
 //// Load the OOMPSH namespace, with configuration, API and validators.
@@ -24,6 +24,7 @@ const
     adminCredentials = getAdminCredentials()
   , { apiURL, validatorsURL } = OOMPSH.configuration
   , runTests = require('./test.js')
+  , { ok:is, deepEqual:eq } = require('assert')
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
 
@@ -165,12 +166,12 @@ function initHandlers () {
         let data
         if ('begin' === info.type)
             data = { type:info.type, code:8500
-              , ok: `An ${info.isAdmin ? 'admin' : 'enduser'} SSE session opened`
+              , ok: `An ${info.usertype} SSE session opened`
               , oompshID: info.oompshID
             }
         else if ('onSSEClientClose' === info.type)
             data = { type:info.type, code:8510
-              , ok: `An ${info.isAdmin ? 'admin' : 'enduser'} SSE session closed`
+              , ok: `An ${info.usertype} SSE session closed`
               , oompshID: info.oompshID
             }
         else if ('hard-end' === info.type)
@@ -179,7 +180,7 @@ function initHandlers () {
                   + info.tally.admin   + ' admin(s) and '
                   + info.tally.enduser + ' enduser(s)'
             }
-        broadcast(data, 'admin')
+        broadcast(data, 'admin', null, 'log')
     })
 
 }
@@ -191,8 +192,8 @@ function onSSEClientClose () { const I='onSSEClientClose'
 
         //// Server state has changed so fire an event. This may be logged
         //// to a server file, and sent to admin SSE clients.
-        const { oompshID, isAdmin } = res
-        HUB.fire('state-change', { type:'onSSEClientClose', oompshID, isAdmin })
+        const { oompshID, usertype } = res
+        HUB.fire('state-change', { type:'onSSEClientClose', oompshID, usertype })
     }})
 }
 
@@ -212,24 +213,25 @@ OOMPSH.action = {
 
     //// STATE-PRESERVING ACTIONS
 
-    //// Returns the API as a JSON object.
+    //// Retrieves a description of the API.
     '': (req, res, credentials, action, filter) => {
         res.writeHead(200)
         res.end( JSON.stringify(OOMPSH.api, null, 2) + `\n` )
         // OOMPSH.api includes the key/value `code:6000`
     }
 
-    //// A version request.
+
+    //// Shows the app’s name and version.
   , 'version': (req, res, credentials, action, filter) =>
         ok(res, 6100, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
 
 
-    //// Send a soft-end event.
+    //// Asks SSE clients to close.
   , 'soft-end': (req, res, credentials, action, filter) => {
 
         const tally = broadcast(
             { ok:'An admin POSTed a soft-end instruction', code:8010, type:'soft-end' }
-          , filter, res, 'soft-end')
+          , filter, res, 'end')
 
         //// Respond to the original request.
         if (tally)
@@ -238,11 +240,71 @@ OOMPSH.action = {
     }
 
 
-    //// Broadcast a notification.
+    //// Sends a message to SSE clients.
   , 'notify': (req, res, credentials, action, filter) => {
-        const raw = []
-        req.on( 'data', chunk => raw.push(chunk) )
-           .on( 'end', evt => notify(req, res, credentials, action, filter, raw) )
+        parseBody(req, res).then( data => {
+            try { compare(data, OOMPSH.valid.notifyBody) } catch (e) {
+                return error(res, 9530, 406, `Invalid body, see notifyBody, `
+                  + validatorsURL) }
+            const tally = broadcast({ code:8030, ok:data.message, type:'notify'}
+              , filter, res)
+            if (tally) ok(res, 7030, 200, 'Notified '+ tally.admin
+              + ' admin(s), ' + tally.enduser + ' enduser(s)')
+        }).catch( err => {} )
+    }
+
+
+    //// Tells endusers an item was created.
+  , 'add': (req, res, credentials, action, filter) => {
+        parseBody(req, res).then( data => {
+            try { compare(data, OOMPSH.valid.addBody) } catch (e) {
+                return error(res, 9540, 406, `Invalid body, see addBody, `
+                  + validatorsURL) }
+            const tally = broadcast({
+                    code: 8040
+                  , diff: data
+                  , ok: `New '${filter}' was created`
+                  , type: 'add' }
+              , filter, res, 'bread', 'bread')
+            if (tally) // `tally` is false if `broadcast()` sent an `error()`
+                ok(res, 7040, 200, `'add' sent to ${tally.enduser} '${filter}' enduser(s)`)
+        }).catch( err => {} )
+    }
+
+
+    //// Tells endusers an item was modified.
+  , 'edit': (req, res, credentials, action, filter) => {
+        parseBody(req, res).then( data => {
+            try { compare(data, OOMPSH.valid.editBody) } catch (e) {
+                return error(res, 9550, 406, `Invalid body, see editBody, `
+                  + validatorsURL) }
+            const tally = broadcast({
+                    code: 8050
+                  , diff: data
+                  , ok: `A '${filter}' was modified`
+                  , type: 'edit' }
+              , filter, res, 'bread', 'bread')
+            if (tally) // `tally` is false if `broadcast()` sent an `error()`
+                ok(res, 7050, 200, `'edit' sent to ${tally.enduser} '${filter}' enduser(s)`)
+        }).catch( err => {} )
+    }
+
+
+    //// Tells endusers an item was removed.
+  , 'delete': (req, res, credentials, action, filter) => {
+        parseBody(req, res).then( data => {
+            try { compare(data, OOMPSH.valid.deleteBody) } catch (e) {
+                return error(res, 9560, 406, `Invalid body, see deleteBody, `
+                  + validatorsURL) }
+            const tally = broadcast({
+                    code: 8060
+                  , diff: data
+                  , ok: `A '${filter}' was removed`
+                  , type: 'delete' }
+              , filter, res, 'bread', 'bread')
+            if (tally) // `tally` is false if `broadcast()` sent an `error()`
+                ok(res, 7060, 200, `'delete' sent to ${tally.enduser} '${filter}' enduser(s)`)
+        }).catch( err => {} )
     }
 
 
@@ -265,13 +327,20 @@ OOMPSH.action = {
         //// Finish validating the request.
         if (! req.headers.accept || 'text/event-stream' !== req.headers.accept)
             return error(res, 9400, 406, "Missing 'Accept: text/event-stream' header")
+        //@TODO validate `filter`
 
         //// Store the response in `sseClients`, and add meta and listeners.
         STATE.sseClients.push(res)
-        const beginAt  = res.oompshID = (new Date())*1 // unix timestamp in ms
+
+        //// Add meta.
+        const beginAt  = res.beginAt = (new Date())*1 // unix timestamp in ms
+        res.filter = filter // post-types for an enduser, log-types for an admin
+        const group = res.group = 'all' // useful for `OOMPSH.valid.filter.standard`
         const oompshID = res.oompshID = ~~(Math.random()*10) // 0-9
           + (Math.random().toString(36).slice(2,8)+'xxxx').slice(0,6) // a-z0-9
-        const isAdmin  = res.isAdmin = !! credentials
+        const usertype = res.usertype = credentials ? 'admin' : 'enduser'
+
+        //// Add listeners
         res.on('close', onSSEClientClose.bind(res) ) // bind client to `this`
         res.on('error', onSSEClientError.bind(res) ) // bind client to `this`
 
@@ -281,13 +350,13 @@ OOMPSH.action = {
           , 'Connection':    'keep-alive'
         })
         sendSSE(res, null, { // `null` makes an event named 'message'
-            beginAt, oompshID, isAdmin
+            beginAt, filter, group, oompshID, usertype
           , code: 8000
-          , ok: (res.isAdmin?'Admin':'Enduser') + ' SSE session is open'
+          , ok: ucFirst(usertype) + ' SSE session is open'
         })
 
         //// Server state has changed so fire an event.
-        HUB.fire('state-change', { type:action, beginAt, oompshID, isAdmin })
+        HUB.fire('state-change', { type:action, beginAt, oompshID, usertype })
     }
 
 
@@ -295,33 +364,23 @@ OOMPSH.action = {
   , 'hard-end': (req, res, credentials, action, filter) => {
         const
             tally = { admin:0, enduser:0 }
-          , filters = filterGen(res, OOMPSH.valid.standardFilter, filter)
-        if (! filters) return // invalid `filter`, `filterGen()` has sent error
-/*
-          , match = filter.match(OOMPSH.valid.standardFilter) || []
-          , oompshIDFilter = match[1]
-          , usertypeFilter = match[2] && 'all' !== filter ? filter : false
-        if (! match.length)
-            return error(res, 9260, 406, 'Invalid filter, see standardFilter, ' + validURL)
-*/
+          , filterFn = filterFactory(res, 'standard', filter)
+        if (! filterFn) return // invalid `filter`, `filterFactory()` sent error
+
         //// Warn SSE clients shortly before disconnecting them.
         broadcast(
             { ok:'An admin POSTed a hard-end instruction', code:8020, type:'hard-end' }
-          , filter, res, 'hard-end')
+          , filter, res, 'end')
 
         //// End the SSE session of any SSE clients which pass the filter, and
         //// remove them from the `sseClients` array.
         const newSseClients = []
         STATE.sseClients.forEach( sseRes => {
-            const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-            if (
-                (filters.oompshID && filters.oompshID !== sseRes.oompshID)
-             || (filters.usertype && 0 > usertype.indexOf(filters.usertype) )
-            ) {
-                newSseClients.push(sseRes)
+            if ( filterFn(sseRes) ) {
+                sseRes.end()
+                tally[sseRes.usertype]++
             } else {
-                sseRes.end(':bye!\n') // SSE comments begin with a colon
-                tally[usertype]++
+                newSseClients.push(sseRes)
             }
         })
         STATE.sseClients = newSseClients
@@ -395,40 +454,23 @@ function getAdminCredentials () {
 }
 
 
-function notify (req, res, credentials, action, filter, raw) {
-    raw = Buffer.concat(raw).toString()
-    try { var data = JSON.parse(raw) } catch (e) {}
-    if ('object' !== typeof data || null == data || null == data.message)
-        return error(res, 9310, 406, `Body should be '{ "message":"Hi!" }'`)
-    const tally = broadcast({
-        code: 8030
-      , ok: data.message
-      , type: 'notify'
-    }, filter, res)
-    if (tally)
-        ok(res, 7030, 200, 'Notified '+ tally.admin + ' admin(s), '
-          + tally.enduser + ' enduser(s)')
-}
-
-
-function broadcast (data, filter, res, eventName) {
+function broadcast (data, filter, res, eventName, filterValidatorName='standard') {
     const
         tally = { admin:0, enduser:0 }
-      , filters = filterGen(res, OOMPSH.valid.standardFilter, filter)
-    if (! filters) return // invalid `filter`, `filterGen()` has sent error
+      , filterFn = filterFactory(res, filterValidatorName, filter)
+    if (! filterFn) return // invalid `filter`, `filterFactory()` sent error
 
     //// Send an event to any SSE clients which pass the filter.
     STATE.sseClients.forEach( sseRes => {
-        const usertype = sseRes.isAdmin ? 'admin' : 'enduser'
-        if (filters.oompshID && filters.oompshID !== sseRes.oompshID) return
-        if (filters.usertype && 0 > usertype.indexOf(filters.usertype) ) return
-        sendSSE(sseRes, eventName, data)
-        tally[usertype]++
+        if ( filterFn(sseRes) ) {
+            sendSSE(sseRes, eventName, data)
+            tally[sseRes.usertype]++
+        }
     })
     return tally
 }
 
-
+// 8626864962
 function sendSSE (res, eventName=null, data) {
     data.sentAt = data.sentAt || (new Date())*1 // unix timestamp in ms
     const sortedKeys = Object.keys(data).sort()
@@ -436,7 +478,7 @@ function sendSSE (res, eventName=null, data) {
     sortedKeys.forEach( key => sortedData[key] = data[key] )
     res.write('id: ' + (STATE.sseID++) + '\n')
     if (eventName) res.write('event: ' + eventName + '\n')
-    JSON.stringify(sortedData, 2).split('\n').forEach(
+    JSON.stringify(sortedData, null, 2).split('\n').forEach(
         line => {
             res.write('data: ' + line + '\n')
         })
@@ -444,20 +486,91 @@ function sendSSE (res, eventName=null, data) {
 }
 
 
-//// Validate `filter` and define `filters.usertype` and `filters.oompshID`.
-function filterGen (res, validator, filter) {
-    const //@TODO deal with validators other than OOMPSH.valid.standardFilter
-        match = filter.match(validator) || []
-      , oompshID = match[1]
-      , usertype = match[2] && 'all' !== filter ? filter : false
-// console.log(`"${filter}"`, `"${oompshIDFilter}"`, `"${usertypeFilter}"`);
-    if (! match.length) //@TODO error-check internal `broadcast()` calls
-        error(res, 9260, 406
-          , 'Invalid filter, see standardFilter, ' + validatorsURL)
-    else
-        return { oompshID, usertype }
+//// Validates `filter` and returns a function to accept or reject SSE clients.
+function filterFactory (
+    res // Node HTTP `response` object, lets `filterFactory()` send an `error()`
+  , validatorName // eg 'standard' for `OOMPSH.valid.filter.standard`
+  , filter // the `filter` string, from the last part of the request path
+) {
+    //// Deal with the special 'bread' case. @TODO can this be not a special case?
+    if ('bread' === validatorName)
+        return client => {
+            if (null == client.filter) return false // client has no `filter` meta
+            let accept = false
+            client.filter.split(',').forEach( clientFilter => {
+                if (filter === clientFilter)
+                    return accept = true
+            })
+            return accept
+        }
+
+    ////
+    const
+        filterObj = {} // used by `filterFn()` to accept or reject SSE clients
+      , validator = OOMPSH.valid.filter[validatorName] // { key1: /[abc]/, key2: /[def]/ }
+    Object.keys(validator).forEach( key => {
+        const rx = validator[key] // rx = /[abc]/
+        if ( rx.test(filter) ) // if `filter` contains 'a', 'b' or 'c'...
+            filterObj[key] = filter // ...`filterFn()` will reject clients...
+    }) // ... with no `key1` property, or whose `key1` does not equal `filter`
+    if ( res && 0 === Object.keys(filterObj).length )
+        return error(res, 9260, 406, `Invalid filter, see filter.${validatorName}, `
+          + validatorsURL)
+    return client => {
+        let accept = true
+        Object.keys(filterObj).forEach( key => {
+            if (null == client[key]) return accept = false // client has no `key1`
+            if (filterObj[key] !== client[key]) // test client’s `key1`
+                return accept = false // any filter which fails rejects the client
+        })
+        return accept
+    }
 }
 
 
+////
+function parseBody (req, res) {
+    return new Promise( (resolve, reject) => {
+        const raw = []
+        req.on( 'data', chunk => raw.push(chunk) )
+           .on( 'end', evt => {
+                try {
+                    var body = JSON.parse( Buffer.concat(raw).toString() )
+                } catch (e) {
+                    error(res, 9320, 406, 'Unparseable body')
+                    return reject('Unparseable body')
+                }
+                if (null !== body && 'object' === typeof body)
+                    return resolve(body)
+                error(res, 9330, 406, 'Non-object body')
+                reject('Non-object body')
+            })
+    })
+}
+
+
+////
+function compare (actual, model) {
+    if ('object' !== typeof actual)
+        throw Error('`oompsh.js:compare()` was passed '
+          + (typeof actual) + ' to `actual`')
+    const actualKeys = Object.keys(actual).sort()
+    const modelKeys = Object.keys(model).sort()
+    eq(actualKeys, modelKeys, 'Mismatch between `actual` and `model` keys')
+    modelKeys.forEach( modelKey => {
+        const actualVal = actual[modelKey]
+        const modelVal = model[modelKey]
+        if ( 'function' === typeof modelVal.test) // eg a RegExp
+            is(modelVal.test(actualVal), `Invalid \`model\` key '${modelKey}'`)
+        else
+            eq(modelVal, actualVal, `Different \`model\` key '${modelKey}'`)
+    })
+}
+
+
+////
+function ucFirst (str) {
+    return str[0].toUpperCase() + str.slice(1)
+}
 
 }()

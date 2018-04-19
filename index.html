@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.2.5</title>
+<title>Oompsh 0.3.0</title>
 <meta name="description"
    content="A Node.js server which adds realtime push notification to Oom apps">
 <link rel="author" href="README.md">
@@ -118,8 +118,9 @@ pre .client.ok     { color: black }
 pre .server.error  { color: red }
 pre .server.ok     { color: #16a }
 pre .message  { background: #ced }
-pre .soft-end { background: #cff }
-pre .hard-end { background: #fdd }
+pre .end      { background: #cff }
+pre .log      { background: #ffd }
+pre .bread    { background: #fcf }
 .table {
     display: table;
     width: 100%;
@@ -153,7 +154,7 @@ pre .hard-end { background: #fdd }
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.2.5</h2>
+<h2>Oompsh 0.3.0</h2>
 <nav> &nbsp;
   <a href="index.html" id="home-link">Home</a> &nbsp;
   <a href="support/test.html">Test @TODO</a> &nbsp;
@@ -249,8 +250,8 @@ OOMPSH.addSampleButton = function (actions, method, config) {
           , tip     = actions[action].tip || ''
           , eg      = actions[action].eg  || ''
           , sample  = { method, action
-              , filter: (eg.match(/([a-z0-9]+)$/)||[])[1] //@TODO better parser
-              , body:   (eg.match(/BODY {(.+)}/)||[])[1]  //@TODO better parser
+              , filter: (eg.match(/([-a-z0-9]+)$/)||[])[1] //@TODO better parser
+              , body:   (eg.match(/BODY {(.+)}/)||[])[1]   //@TODO better parser
             }
         sample.filter = sample.filter === action ? '' : sample.filter
         sample.body = sample.body ? '{'+sample.body+'}' : ''
@@ -283,8 +284,12 @@ OOMPSH.updateValidityHilite = function ($el) {
         throw Error(`usertype '${usertype}' invalid`)
 
     //// Set the INPUT’s class depending on its validity.
-    $el.className = $el.value ? OOMPSH.valid[name].test($el.value.trim())
-      ? 'valid' : 'invalid' : '' // green, red or blue
+    if ('filter' === name) {
+        //@TODO combine OOMPSH.valid.filters
+    } else {
+        $el.className = $el.value ? OOMPSH.valid[name].test($el.value.trim())
+          ? 'valid' : 'invalid' : '' // green, red or blue
+    }
 
     //// Show a message after the '#domain' INPUT.
     if ('domain' === $el.id) {
@@ -387,9 +392,10 @@ OOMPSH.begin = function (config) {
     domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
     apiv = apiv ? apiv + '/' : '' // append a slash if `apiv` has been set
 
-    //// Build the URL, eg 'http://localhost:1234/jo:pw/begin/enduser'
-    const url         = domain + apiv + creds + 'begin/' + usertype
-    const urlLog = domain + apiv + credsLog + 'begin/' + usertype
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/begin/vvv'
+    const filter = 'admin' === usertype ? 'vvv' : 'foo-bar,baz'
+    const url    = domain + apiv + creds    + 'begin/' + filter
+    const urlLog = domain + apiv + credsLog + 'begin/' + filter
 
     //// Log that `begin()` has been called.
     if ('admin' !== usertype && 'enduser' !== usertype)
@@ -433,27 +439,36 @@ OOMPSH.begin = function (config) {
     }, false)
 
     //// Custom events.
-    es.addEventListener('soft-end', evt => {
+    es.addEventListener('end', evt => {
         let data
         try { data = JSON.parse(evt.data)
         } catch (err) {
             return logClient({ error:'JSON: ' + err.message })
         }
         if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'soft-end')
-        end(config, "of 'soft-end' event")
+        logServer(data, 'end')
+        if ('soft-end' === data.type)
+            end(config, "of 'soft-end' event")
     }, false)
 
-    //// Custom events.
-    es.addEventListener('hard-end', evt => {
+    es.addEventListener('log', evt => {
         let data
         try { data = JSON.parse(evt.data)
         } catch (err) {
             return logClient({ error:'JSON: ' + err.message })
         }
         if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'hard-end')
-        end(config, "of 'hard-end' event")
+        logServer(data, 'log')
+    }, false)
+
+    es.addEventListener('bread', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'bread')
     }, false)
 
 }//begin()
