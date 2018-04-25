@@ -2,16 +2,16 @@
 
 body {
     margin: 0 1em;
-		overflow-x: hidden;
-		min-width: 280px;
+    overflow-x: hidden;
+    min-width: 280px;
 }
 #bkgnd {
-	  z-index: -1;
-	  position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
+    z-index: -1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 .container {
     padding-bottom: 1em;
@@ -42,12 +42,12 @@ pre, tt, code, kbd, samp, var {
 }
 h1, h2, .h1, .h2 {
     color: #993300;
-		filter: hue-rotate(0) saturate(200%);
+    filter: hue-rotate(0) saturate(200%);
 }
 a,
 nav .burger {
     color: #993300;
-		filter: hue-rotate(0) saturate(200%);
+    filter: hue-rotate(0) saturate(200%);
     transition: filter 1s;
 }
 a:hover,
@@ -98,7 +98,7 @@ h3, h4, .h3, .h4 {
 /* HEADER */
 
 header {
-	  z-index: 1;
+    z-index: 1;
     position: fixed;
     top: 0;
     left: 0;
@@ -129,6 +129,8 @@ header .logo-wrap >span {
     width: 700px;
     height: 700px;
     transform: scale(0.0625, 0.0625);
+    backface-visibility: hidden;
+    padding: 2px;
 }
 #logo-image .logo {
     margin: -130px 0 0 -250px;
@@ -164,14 +166,14 @@ nav a {
     background: #fff;
 }
 @media screen and (max-width: 540px) {
-	  nav {
-			  overflow: visible;
-				height: 400px;
+    nav {
+        overflow: visible;
+        height: 400px;
         transition: height 0.5s 0s;
-		}
+    }
     body.show-burger nav {
-			  overflow: hidden;
-				height: 50px;
+        overflow: hidden;
+        height: 50px;
     }
     nav .burger {
         display: block;
@@ -197,7 +199,7 @@ nav a {
 
 #intro {
     text-align: center;
-		padding-top: 2px;
+    padding-top: 2px;
 }
 #intro .logo {
     display: block;
@@ -208,8 +210,8 @@ nav a {
     margin-right: auto;
     opacity: 0;
     visibility: hidden;
-		outline: 2px solid #fff; /* prevent occasional background appearing at edges */
-		outline-offset: -1px;
+    outline: 2px solid #fff; /* prevent occasional background appearing at edges */
+    outline-offset: -1px;
     transition: opacity 1s, visibility 1s 0s;
 }
 body.at-top #intro .logo {
@@ -249,7 +251,7 @@ div.highlight {
     border-radius: 0.5em;
 }
 div.highlight pre {
-		overflow-x: scroll;
+    overflow-x: scroll;
 }
 code {
     font-size: 1em;
@@ -264,10 +266,10 @@ pre .pl-cce { color:#d73a49 } /* escaped string */
 pre .pl-c   { color:#6a737d } /* comment */
 pre .pl-en  { color:#6f42c1 } /* JS Objects */
 @media screen and (max-width: 991px) {
-	  div.highlight { font-size: 1em; }
+    div.highlight { font-size: 1em; }
 }
 @media screen and (max-width: 767px) {
-	  div.highlight { font-size: 0.8em; }
+    div.highlight { font-size: 0.8em; }
 }
 
 
@@ -275,10 +277,6 @@ pre .pl-en  { color:#6f42c1 } /* JS Objects */
 
 /* BACKGROUND */
 
-/* html {
-		background-attachment: fixed;
-}
-html, */
 #bkgnd,
 header .logo-wrap >span,
 #intro .logo {
@@ -325,8 +323,8 @@ header .logo-wrap >span,
     display: none;
 }
 .nopad {
-   padding: 0 !important;
-   margin: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 .rr {
     text-align: right;

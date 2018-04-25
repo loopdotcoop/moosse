@@ -8,7 +8,7 @@
 #### A Node.js server which push-notifies endusers when shared resources change
 
 + __Last update:__  2018/04/20
-+ __Version:__      0.3.2
++ __Version:__      0.3.3
 
 [Homepage](http://moosse.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/moosse) &nbsp;
@@ -75,7 +75,8 @@ After cloning the Moosse repo, set up Heroku:
 `$ heroku login # ...and enter your email and Heroku password`  
 `$ heroku apps:create my-great-moosse server # `
 
-Once Heroku is set up, you can check for current environment (config) variables:  
+Once Moosse is deployed to Heroku, you can check for current environment
+(config) variables:  
 `$ heroku run printenv`  
 
 You’ll need to choose an admin username and password, and record it in the
@@ -110,7 +111,7 @@ ROOT.MOOSSE = {}
 ```js
 ROOT.MOOSSE.configuration = {
 
-    VERSION: '0.3.2' // the major part of this is also the API version, `APIV`
+    VERSION: '0.3.3' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.MOOSSE.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
@@ -358,3 +359,6 @@ MOOSSE.valid = {
 
 
 ## FAQ
+
+Q. Can endusers change their subscription during an SSE session?  
+A. No, they should end the SSE session and start a new one

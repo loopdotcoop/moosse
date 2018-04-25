@@ -1,4 +1,4 @@
-//// moosse.js //// 0.3.2 //// The Node.js server //////////////////////////////
+//// moosse.js //// 0.3.3 //// The Node.js server //////////////////////////////
 !function(){
 
 //// Load the MOOSSE namespace, with configuration, API and validators.

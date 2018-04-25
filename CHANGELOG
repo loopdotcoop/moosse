@@ -27,3 +27,4 @@
 0.3.0 ‘/v0/begin/foo-bar,baz’ subscribes to ‘/v0/<creds>/add/baz’ etc
 0.3.1 Renamed ‘Moosse’
 0.3.2 Icons, logo, style; demo in ‘support/demo.html’
+0.3.3 Test in ‘support/test.html’

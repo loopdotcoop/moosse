@@ -74,10 +74,10 @@ pre div {
 }
 pre .client   { background: #eee }
 pre .server   { background: #cde }
-pre .client.error  { color: red }
+pre .client.error  { color: #d73a49 }
 pre .client.ok     { color: black }
-pre .server.error  { color: red }
-pre .server.ok     { color: #16a }
+pre .server.error  { color: #d73a49 }
+pre .server.ok     { color: #6f42c1 }
 pre .message  { background: #ced }
 pre .end      { background: #cff }
 pre .log      { background: #ffd }

@@ -15,7 +15,7 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Moosse 0.3.2</title>
+<title>Moosse 0.3.3</title>
 <meta name="description"
    content="Mutable Objects Over Server-Sent Events.
    A Node.js server which push-notifies endusers when shared resources change">
@@ -102,7 +102,6 @@
 
 
 <!-- Header and Navigation menu -->
-<!-- <h2>Moosse 0.3.2</h2> -->
 <header>
 
   <a href="http://moosse.loop.coop/" class="logo-wrap">
@@ -127,10 +126,10 @@
   </nav>
 
 </header>
-<!-- scroll-down shows header --><script>this.addEventListener('scroll',function
-(e){document.body.classList[300>e.pageY?'add':'remove']('at-top')})</script>
-<!-- show burger-menu --><script>document.querySelector('nav').addEventListener(
-'click',function(e){document.body.classList.toggle('show-burger')})</script>
+<script>/* scroll-down shows header */ window.addEventListener('scroll',function
+(e){document.body.classList[300>window.pageYOffset?'add':'remove']('at-top')})
+/* show burger-menu */ document.querySelector('nav').addEventListener('click',
+function(e){document.body.classList.toggle('show-burger')})</script>
 
 
 <div id="intro">
