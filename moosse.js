@@ -1,9 +1,9 @@
-//// oompsh.js //// 0.3.0 //// The Node.js server //////////////////////////////
+//// moosse.js //// 0.3.2 //// The Node.js server //////////////////////////////
 !function(){
 
-//// Load the OOMPSH namespace, with configuration, API and validators.
-require('./oompsh-config.js')
-const OOMPSH = global.OOMPSH
+//// Load the MOOSSE namespace, with configuration, API and validators.
+require('./moosse-config.js')
+const MOOSSE = global.MOOSSE
 
 //// Initialize the server’s event hub and initialize standard handlers.
 const HUB = {
@@ -22,20 +22,20 @@ const STATE = {
 //// Initialize immutable server state.
 const
     adminCredentials = getAdminCredentials()
-  , { apiURL, validatorsURL } = OOMPSH.configuration
+  , { apiURL, validatorsURL } = MOOSSE.configuration
   , runTests = require('./test.js')
   , { ok:is, deepEqual:eq } = require('assert')
   , app = require('http').createServer(server)
   , port = process.env.PORT || 3000 // Heroku sets $PORT
 
 app.on('error', e => {
-    console.error('Oompsh error: ' + e.message)
+    console.error('Moosse error: ' + e.message)
     clearInterval(heartbeat)
     app.close()
 })
 
 ////
-app.listen( port, () => console.log(`Oompsh is listening on port ${port}`) )
+app.listen( port, () => console.log(`Moosse is listening on port ${port}`) )
 
 //// Send a ‘heartbeat’ to all SSE clients, once every 10 seconds.
 const heartbeat = setInterval ( () => {
@@ -70,13 +70,13 @@ function server (req, res) {
     //// Parse the four standard parts of the URL.
     const
         parts  = req.url.slice(1,'/'===req.url.slice(-1)?-1:Infinity).split('/')
-      , apiv   = OOMPSH.valid.apiv.test(parts[0])  ? parts[0] : null // mandatory 1st
+      , apiv   = MOOSSE.valid.apiv.test(parts[0])  ? parts[0] : null // mandatory 1st
       , creds  = 0 > (parts[1] || '').indexOf(':') ? null : parts[1] // 2nd
       , action = (creds ? parts[2] : parts[1]) || '' // 2nd (or 3rd if creds)
       , filter = (creds ? parts[3] : parts[2]) || '' // 3rd (or 4th if creds)
 
     //// Make sure the request API version matches this script’s API version.
-    if (apiv !== OOMPSH.configuration.APIV)
+    if (apiv !== MOOSSE.configuration.APIV)
         return error(res, 9200, 501, 'Wrong API version')
 
     //// Deal with the request depending on its method.
@@ -87,17 +87,66 @@ function server (req, res) {
 
 //// Serve a file.
 function serveFile (req, res) {
+    const { readFileSync, existsSync } = require('fs')
 
     //// A request for the example client page.
     if ('/' === req.url || '/index.html' === req.url) {
         res.writeHead(200, {'Content-Type': 'text/html'})
-        res.end( require('fs').readFileSync(__dirname + '/index.html') )
+        res.end( readFileSync(__dirname + '/index.html') )
     }
 
-    //// A request for the Oompsh configuration JavaScript file.
-    else if ('/oompsh-config.js' === req.url) {
+    //// A request for the Moosse configuration JavaScript file.
+    else if ('/moosse-config.js' === req.url) {
         res.writeHead(200, {'Content-Type': 'application/javascript'})
-        res.end( require('fs').readFileSync(__dirname + '/oompsh-config.js') )
+        res.end( readFileSync(__dirname + '/moosse-config.js') )
+    }
+
+    //// A request for a CSS file.
+    else if ('.css' === req.url.slice(-4) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'text/css'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for an HTML file.
+    else if ('.html' === req.url.slice(-5) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'text/html'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for an ICO file.
+    else if ('.ico' === req.url.slice(-4) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'image/x-icon'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for a JSON file.
+    else if ('.json' === req.url.slice(-5) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'application/json'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for a PNG file.
+    else if ('.png' === req.url.slice(-4) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'image/png'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for an SVG file.
+    else if ('.svg' === req.url.slice(-4) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'image/svg+xml'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for a font file.
+    else if ('.woff2' === req.url.slice(-6) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'font/woff2'})
+        res.end( readFileSync(__dirname + req.url) )
+    }
+
+    //// A request for an XML file.
+    else if ('.xml' === req.url.slice(-4) && existsSync(__dirname + req.url) ) {
+        res.writeHead(200, {'Content-Type': 'application/xml'})
+        res.end( readFileSync(__dirname + req.url) )
     }
 
     //// Not found.
@@ -117,39 +166,39 @@ function serveGET (req, res, credentials, action, filter) {
     //// A GET request with valid credentials has access to the ‘admin’ GET
     //// actions, as well as the ‘enduser’ GET actions.
     if (credentials)
-        if (! OOMPSH.valid.creds.test(credentials) )
+        if (! MOOSSE.valid.creds.test(credentials) )
             error(res, 9210, 401, 'Invalid credentials')
         else if (! adminCredentials[credentials] )
             error(res, 9211, 401, 'Credentials not recognised')
-        else if (! OOMPSH.api.admin.GET[action] )
+        else if (! MOOSSE.api.admin.GET[action] )
             error(res, 9230, 404, 'No such action, see docs, '+apiURL)
         else
-            OOMPSH.action[action](req, res, credentials, action, filter)
+            MOOSSE.action[action](req, res, credentials, action, filter)
 
     //// GET requests without credentials can only access ‘enduser’ GET actions.
     else
-        if (! OOMPSH.api.enduser.GET[action] )
+        if (! MOOSSE.api.enduser.GET[action] )
             error(res, 9231, 404, 'No such action, see docs, '+apiURL)
         else
-            OOMPSH.action[action](req, res, credentials, action, filter)
+            MOOSSE.action[action](req, res, credentials, action, filter)
 }
 
 
 //// Serve a POST request.
 function servePOST (req, res, credentials, action, filter) {
 
-    //// All POST requests must have valid credentials. Currently, Oompsh does
+    //// All POST requests must have valid credentials. Currently, Moosse does
     //// not offer any POST actions to endusers.
     if (! credentials)
         error(res, 9222, 401, "Can't POST without credentials")
-    else if (credentials && ! OOMPSH.valid.creds.test(credentials) )
+    else if (credentials && ! MOOSSE.valid.creds.test(credentials) )
         error(res, 9220, 401, 'Invalid credentials')
     else if (credentials && ! adminCredentials[credentials] )
         error(res, 9221, 401, 'Credentials not recognised')
-    else if (! OOMPSH.api.admin.POST[action] )
+    else if (! MOOSSE.api.admin.POST[action] )
         error(res, 9240, 404, 'No such action, see docs, '+apiURL)
     else
-        OOMPSH.action[action](req, res, credentials, action, filter)
+        MOOSSE.action[action](req, res, credentials, action, filter)
 }
 
 
@@ -167,12 +216,12 @@ function initHandlers () {
         if ('begin' === info.type)
             data = { type:info.type, code:8500
               , ok: `An ${info.usertype} SSE session opened`
-              , oompshID: info.oompshID
+              , moosseID: info.moosseID
             }
         else if ('onSSEClientClose' === info.type)
             data = { type:info.type, code:8510
               , ok: `An ${info.usertype} SSE session closed`
-              , oompshID: info.oompshID
+              , moosseID: info.moosseID
             }
         else if ('hard-end' === info.type)
             data = { type:info.type, code:8520
@@ -192,21 +241,21 @@ function onSSEClientClose () { const I='onSSEClientClose'
 
         //// Server state has changed so fire an event. This may be logged
         //// to a server file, and sent to admin SSE clients.
-        const { oompshID, usertype } = res
-        HUB.fire('state-change', { type:'onSSEClientClose', oompshID, usertype })
+        const { moosseID, usertype } = res
+        HUB.fire('state-change', { type:'onSSEClientClose', moosseID, usertype })
     }})
 }
 
 
 function onSSEClientError () {
-    console.error('onSSEClientError() oompshID ' + res.oompshID + ':', res);
+    console.error('onSSEClientError() moosseID ' + res.moosseID + ':', res);
 }
 
 
 
 
-//// Add server actions to the Oompsh namespace.
-OOMPSH.action = {
+//// Add server actions to the Moosse namespace.
+MOOSSE.action = {
 
 
 
@@ -216,14 +265,14 @@ OOMPSH.action = {
     //// Retrieves a description of the API.
     '': (req, res, credentials, action, filter) => {
         res.writeHead(200)
-        res.end( JSON.stringify(OOMPSH.api, null, 2) + `\n` )
-        // OOMPSH.api includes the key/value `code:6000`
+        res.end( JSON.stringify(MOOSSE.api, null, 2) + `\n` )
+        // MOOSSE.api includes the key/value `code:6000`
     }
 
 
     //// Shows the app’s name and version.
   , 'version': (req, res, credentials, action, filter) =>
-        ok(res, 6100, 200, 'Oompsh ' + OOMPSH.configuration.VERSION)
+        ok(res, 6100, 200, 'Moosse ' + MOOSSE.configuration.VERSION)
 
 
     //// Asks SSE clients to close.
@@ -243,7 +292,7 @@ OOMPSH.action = {
     //// Sends a message to SSE clients.
   , 'notify': (req, res, credentials, action, filter) => {
         parseBody(req, res).then( data => {
-            try { compare(data, OOMPSH.valid.notifyBody) } catch (e) {
+            try { compare(data, MOOSSE.valid.notifyBody) } catch (e) {
                 return error(res, 9530, 406, `Invalid body, see notifyBody, `
                   + validatorsURL) }
             const tally = broadcast({ code:8030, ok:data.message, type:'notify'}
@@ -257,7 +306,7 @@ OOMPSH.action = {
     //// Tells endusers an item was created.
   , 'add': (req, res, credentials, action, filter) => {
         parseBody(req, res).then( data => {
-            try { compare(data, OOMPSH.valid.addBody) } catch (e) {
+            try { compare(data, MOOSSE.valid.addBody) } catch (e) {
                 return error(res, 9540, 406, `Invalid body, see addBody, `
                   + validatorsURL) }
             const tally = broadcast({
@@ -275,7 +324,7 @@ OOMPSH.action = {
     //// Tells endusers an item was modified.
   , 'edit': (req, res, credentials, action, filter) => {
         parseBody(req, res).then( data => {
-            try { compare(data, OOMPSH.valid.editBody) } catch (e) {
+            try { compare(data, MOOSSE.valid.editBody) } catch (e) {
                 return error(res, 9550, 406, `Invalid body, see editBody, `
                   + validatorsURL) }
             const tally = broadcast({
@@ -293,7 +342,7 @@ OOMPSH.action = {
     //// Tells endusers an item was removed.
   , 'delete': (req, res, credentials, action, filter) => {
         parseBody(req, res).then( data => {
-            try { compare(data, OOMPSH.valid.deleteBody) } catch (e) {
+            try { compare(data, MOOSSE.valid.deleteBody) } catch (e) {
                 return error(res, 9560, 406, `Invalid body, see deleteBody, `
                   + validatorsURL) }
             const tally = broadcast({
@@ -335,8 +384,8 @@ OOMPSH.action = {
         //// Add meta.
         const beginAt  = res.beginAt = (new Date())*1 // unix timestamp in ms
         res.filter = filter // post-types for an enduser, log-types for an admin
-        const group = res.group = 'all' // useful for `OOMPSH.valid.filter.standard`
-        const oompshID = res.oompshID = ~~(Math.random()*10) // 0-9
+        const group = res.group = 'all' // useful for `MOOSSE.valid.filter.standard`
+        const moosseID = res.moosseID = ~~(Math.random()*10) // 0-9
           + (Math.random().toString(36).slice(2,8)+'xxxx').slice(0,6) // a-z0-9
         const usertype = res.usertype = credentials ? 'admin' : 'enduser'
 
@@ -350,13 +399,13 @@ OOMPSH.action = {
           , 'Connection':    'keep-alive'
         })
         sendSSE(res, null, { // `null` makes an event named 'message'
-            beginAt, filter, group, oompshID, usertype
+            beginAt, filter, group, moosseID, usertype
           , code: 8000
           , ok: ucFirst(usertype) + ' SSE session is open'
         })
 
         //// Server state has changed so fire an event.
-        HUB.fire('state-change', { type:action, beginAt, oompshID, usertype })
+        HUB.fire('state-change', { type:action, beginAt, moosseID, usertype })
     }
 
 
@@ -393,15 +442,15 @@ OOMPSH.action = {
         HUB.fire('state-change', { type:action, tally })
     }
 
-}//OOMPSH.action
+}//MOOSSE.action
 
-{ //// Ensure consistency between OOMPSH.action and OOMPSH.api.
-    const a = OOMPSH.api.admin, e = OOMPSH.api.enduser, keys = Object.keys
+{ //// Ensure consistency between MOOSSE.action and MOOSSE.api.
+    const a = MOOSSE.api.admin, e = MOOSSE.api.enduser, keys = Object.keys
         , l = keys(a.GET).concat(keys(a.POST), keys(e.GET), keys(e.POST))
     for (let key of l)
-        if (! OOMPSH.action[key]) throw Error(`Missing OOMPSH.action.${key}()`)
-    for (let key in OOMPSH.action)
-        if (! l.includes(key)) throw Error(`Unreachable OOMPSH.action.${key}()`)
+        if (! MOOSSE.action[key]) throw Error(`Missing MOOSSE.action.${key}()`)
+    for (let key in MOOSSE.action)
+        if (! l.includes(key)) throw Error(`Unreachable MOOSSE.action.${key}()`)
 }
 
 
@@ -433,7 +482,7 @@ function error (res, code, status, remarks, contentType=null) {
     remarks = remarks.replace(/"/g, '\\"')
     remarks = remarks.replace(/\n/g, '\\n')
     res.writeHead(status, headers)
-    res.end(`{ "code":${code}, "error":"${OOMPSH.api.status[status]}: `
+    res.end(`{ "code":${code}, "error":"${MOOSSE.api.status[status]}: `
       + `${remarks}", "status":${status} }\n`)
     return false
 }
@@ -442,14 +491,14 @@ function error (res, code, status, remarks, contentType=null) {
 ////
 function getAdminCredentials () {
     const out = {}
-    let errs = [], envCreds = process.env.OOMPSH_ADMIN_CREDENTIALS
+    let errs = [], envCreds = process.env.MOOSSE_ADMIN_CREDENTIALS
     if (! envCreds)
-        throw Error('Try `$ export OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
+        throw Error('Try `$ export MOOSSE_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
     envCreds = envCreds.split(',')
     envCreds.forEach( (ec, i) => {
-        if (! OOMPSH.valid.creds.test(ec) ) errs.push(i); else out[ec] = 1 } )
+        if (! MOOSSE.valid.creds.test(ec) ) errs.push(i); else out[ec] = 1 } )
     if (errs.length)
-        throw Error('Invalid OOMPSH_ADMIN_CREDENTIALS at index ' + errs)
+        throw Error('Invalid MOOSSE_ADMIN_CREDENTIALS at index ' + errs)
     return out
 }
 
@@ -489,7 +538,7 @@ function sendSSE (res, eventName=null, data) {
 //// Validates `filter` and returns a function to accept or reject SSE clients.
 function filterFactory (
     res // Node HTTP `response` object, lets `filterFactory()` send an `error()`
-  , validatorName // eg 'standard' for `OOMPSH.valid.filter.standard`
+  , validatorName // eg 'standard' for `MOOSSE.valid.filter.standard`
   , filter // the `filter` string, from the last part of the request path
 ) {
     //// Deal with the special 'bread' case. @TODO can this be not a special case?
@@ -507,7 +556,7 @@ function filterFactory (
     ////
     const
         filterObj = {} // used by `filterFn()` to accept or reject SSE clients
-      , validator = OOMPSH.valid.filter[validatorName] // { key1: /[abc]/, key2: /[def]/ }
+      , validator = MOOSSE.valid.filter[validatorName] // { key1: /[abc]/, key2: /[def]/ }
     Object.keys(validator).forEach( key => {
         const rx = validator[key] // rx = /[abc]/
         if ( rx.test(filter) ) // if `filter` contains 'a', 'b' or 'c'...
@@ -552,7 +601,7 @@ function parseBody (req, res) {
 ////
 function compare (actual, model) {
     if ('object' !== typeof actual)
-        throw Error('`oompsh.js:compare()` was passed '
+        throw Error('`moosse.js:compare()` was passed '
           + (typeof actual) + ' to `actual`')
     const actualKeys = Object.keys(actual).sort()
     const modelKeys = Object.keys(model).sort()

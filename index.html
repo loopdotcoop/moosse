@@ -15,654 +15,452 @@
             maximum-scale=1.0, user-scalable=no">
 
 <!-- Search engine meta -->
-<title>Oompsh 0.3.0</title>
+<title>Moosse 0.3.2</title>
 <meta name="description"
-   content="A Node.js server which adds realtime push notification to Oom apps">
+   content="Mutable Objects Over Server-Sent Events.
+   A Node.js server which push-notifies endusers when shared resources change">
 <link rel="author" href="README.md">
 
+<!-- Twitter Card, and Open Graph for Facebook, LinkedIn, Google+, etc -->
+<meta name="twitter:card"    content="summary">
+<meta name="twitter:site"    content="@loopdotcoop">
+<meta name="twitter:creator" content="@richplastow">
+<meta property="og:type"     content="website">
+<meta property="og:locale"   content="en_GB">
+<meta property="og:title"    content="Moosse">
+<meta property="og:url"      content="http://moosse.loop.coop/">
+<meta property="og:image"
+       content="http://moosse.loop.coop/support/asset/logo/logo-1200x900.svg">
+<meta property="og:description"
+       content="Mutable Objects Over Server-Sent Events.
+       A Node.js server which push-notifies endusers when shared resources change">
+
+<!-- From realfavicongenerator.net - see README.md for settings -->
+<link rel="apple-touch-icon" sizes="180x180" href="support/asset/icon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="96x96" href="support/asset/icon/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="32x32" href="support/asset/icon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="support/asset/icon/favicon-16x16.png">
+<link rel="manifest"                  href="support/asset/icon/manifest.json">
+<link rel="mask-icon" color="#993300" href="support/asset/icon/safari-pinned-tab.svg">
+<link rel="shortcut icon"             href="support/asset/icon/favicon.ico">
+<meta name="apple-mobile-web-app-title" content="Moosse">
+<meta name="application-name"           content="Moosse">
+<meta name="msapplication-config"       content="support/asset/icon/browserconfig.xml">
+<meta name="theme-color"                content="#993300">
 
 
 
-<!-- SCRIPT AND STYLE -->
 
+<!-- STYLE -->
+
+<!-- Load fonts as soon as possible -->
 <style>
-body {
-    font-family: Arial, sans-serif;
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-style: normal;
+  src: local('Ubuntu Regular'), local('Ubuntu-Regular')
+    , url(support/asset/font/ubuntu-regular.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
-h2, nav {
-    display: inline-block;
-    margin: 0;
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-style: italic;
+  src: local('Ubuntu Italic'), local('Ubuntu-Italic')
+    , url(support/asset/font/ubuntu-italic.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
-p {
-    margin: 0;
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-style: normal;
+  src: local('Ubuntu Bold'), local('Ubuntu-Bold')
+    , url(support/asset/font/ubuntu-bold.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
-input, pre, button, .samples a {
-    width: 100%;
-    padding: 0.5em 1em;
-    box-sizing: border-box;
-    border-radius: 0.5em;
-    border: none;
-    background: #ddd;
-    font: 1em/0.65 monospace;
-    text-decoration: none;
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-style: italic;
+  src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic')
+    , url(support/asset/font/ubuntu-bolditalic.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
-button, .samples a {
-    color: #000;
-    background: #ccc;
-    border: 1px solid #fff;
-    border-top: 2px solid #eee;
-    border-bottom: 2px solid #bbb;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-button {
-    font-family: Arial, sans-serif;
-}
-.samples a {
-    font-size: 0.8em;
-}
-button:hover, .samples a:hover {
-    background: #ddd;
-}
-button:focus, .samples a:focus {
-    background: #bbb;
-}
-button::-moz-focus-inner {
-    border: 0; /* Firefox */
-}
-input, button, .samples a {
-    outline: none!important;
-}
-input {
-    width: 50%;
-    background: #cde;
-    border: 1px solid #fff;
-    border-top: 2px solid #abc;
-    border-bottom: 2px solid #def;
-}
-input::placeholder {
-    color: #16a;
-}
-input.valid {
-    background: #ced;
-    border-top: 2px solid #acb;
-    border-bottom: 2px solid #dfe;
-}
-input.invalid {
-    background: #ecd;
-    border-top: 2px solid #cab;
-    border-bottom: 2px solid #fde;
-}
-input#apiv {
-    width: 3.5em;
-}
-.samples {
-    margin-bottom: 0.3em;
-}
-.samples button {
-    width: 15em;
-}
-pre {
-    margin-top: 0.3em;
-    line-height: 2px;
-}
-pre div {
-    padding: 0.2em;
-    margin:0;
-    line-height: 1em;
-}
-pre .client   { background: #eee }
-pre .server   { background: #cde }
-pre .client.error  { color: red }
-pre .client.ok     { color: black }
-pre .server.error  { color: red }
-pre .server.ok     { color: #16a }
-pre .message  { background: #ced }
-pre .end      { background: #cff }
-pre .log      { background: #ffd }
-pre .bread    { background: #fcf }
-.table {
-    display: table;
-    width: 100%;
-    margin-top: 2px;
-}
-.table >* {
-    display: table-cell;
-    width: 22.5%;
-}
-#admin-method,
-#enduser-method {
-    width: 10%;
-}
-#admin-body,
-#enduser-body {
-    width: 77.5%;
-}
-.hid {
-    display: none;
+@font-face { font-family: 'Ubuntu Mono'; font-weight: 400; font-style: normal;
+  src: local('Ubuntu Mono'), local('UbuntuMono-Regular')
+    , url(support/asset/font/ubuntumono-regular.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
 </style>
+
+<!-- Load styles -->
+<link rel="stylesheet" href="support/asset/css/bootstrap.4.0.0.min.css">
+<link rel="stylesheet" href="support/asset/css/main.css">
 
 
 
 
 </head>
-<body>
+<body id="home" class="at-top show-burger">
 <div class="container">
 
 
 
 
 <!-- Header and Navigation menu -->
-<h2>Oompsh 0.3.0</h2>
-<nav> &nbsp;
-  <a href="index.html" id="home-link">Home</a> &nbsp;
-  <a href="support/test.html">Test @TODO</a> &nbsp;
-  <a href="https://github.com/loopdotcoop/oompsh">Repo</a> &nbsp;
-  <a href="https://www.npmjs.com/package/oompsh">NPM</a> &nbsp;&nbsp;
-</nav>
+<!-- <h2>Moosse 0.3.2</h2> -->
+<header>
 
-<p>A Node.js server which adds realtime push notification to Oom apps</p>
+  <a href="http://moosse.loop.coop/" class="logo-wrap">
+    <span id="logo-image">
+      <img class="logo" alt="Oom.Foo Logo" src="support/asset/logo/logo-1200x1000-tow.svg">
+    </span>
+    <span id="logo-text" class="d-none d-md-block">
+      <img class="logo" alt="Oom.Foo Logo" src="support/asset/logo/logo-1200x1000-tow.svg">
+    </span>
+  </a>
 
+  <nav>
+    <div class="burger">_<br>_<br>_</div>
+    <a href="#about">About</a>
+    <a href="support/demo.html">Demo</a>
+    <a href="support/test.html">Test</a>
+    <a href="#fork">Fork</a>
+    <a href="#config">Config</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://www.npmjs.com/package/moosse">NPM</a>
+    <a href="https://github.com/loopdotcoop/moosse">Repo</a>
+  </nav>
 
-
-
-<!-- Load the OOMPSH namespace, with configuration, API and validators -->
-<script src="./oompsh-config.js"></script>
-
-
-
-
-<!-- Add browser functions to the OOMPSH namespace -->
-
-<script>!function(ROOT){
-const OOMPSH = ROOT.OOMPSH
-
-
-//// CLIENT UTILITIES
-
-//// logClient()
-//// logServer()
-//// updateValidityHilite()
-//// send()
-//// begin()
-//// end()
+</header>
+<!-- scroll-down shows header --><script>this.addEventListener('scroll',function
+(e){document.body.classList[300>e.pageY?'add':'remove']('at-top')})</script>
+<!-- show burger-menu --><script>document.querySelector('nav').addEventListener(
+'click',function(e){document.body.classList.toggle('show-burger')})</script>
 
 
-//// `logClient()` and `logServer()` both add a line to the onscreen logs.
-//// `logClient()` is used to log activity happening in the browser.
-//// `logServer()` is used to log messages from the server.
-OOMPSH.logClient = function (data)      { log(this, data, 'client') }
-OOMPSH.logServer = function (data, evt) { log(this, data, 'server', evt) }
-function log ($log, raw, source, evt='') {
+<div id="intro">
+  <div class="logo-wrap">
+    <img class="logo" alt="Oom.Foo Logo" src="support/asset/logo/logo-1200x1000-tow.svg">
+    <h2>Mutable Objects Over Server-Sent Events</h2>
+    <h4>A Node.js server which push-notifies endusers when shared resources change</h4>
+  </div>
+</div>
 
-    //// Deal with `raw` if it’s a string - often an unparsed JSON string.
-    if ('string' === typeof raw) // eg 'Hi', '99', '{"nope":0}' or '{"ok":"!"}'
-        try {
-            raw = JSON.parse(raw) // eg '99', '{"nope":0}' or '{"ok":"!"}'
-        } catch (e) {
-            raw = { ok:'(string data): ' + sanitize(raw) } } // eg 'Hi'
-
-    //// Whatever has been passed to `raw`, convert it to a conformant plain
-    //// object. That is, an object with either an 'ok' or an 'error' property.
-    let data
-    if ('object' !== typeof raw) // eg 'number' or 'boolean' (but not 'string')
-        data = { ok:'(' + (typeof raw) + ' data): ' + sanitize(raw) }
-    else // convert to a conformant object if not already, eg `{ok:'!'}`
-        if (null != raw.ok || null != raw.error) // comformant, eg `{ok:'!'}`
-            data = Object.assign({}, raw) // keep other properties
-        else if (null == raw.ok && null != raw.message) // eg an error object
-            data = Object.assign({ error:raw.message }, raw)
-        else // some arbitrary object, eg `{nope:0}`
-            data = { ok:'(object data): ' + sanitize( JSON.stringify(raw) ) }
-
-    //// Add the log-line DIV to `$log.lines` and render the $log.
-    const label = data.error ? 'error' : 'ok'
-    const msg   = sanitize(data.error || data.ok)
-    $log.lines.unshift(
-        '<div class="' + label + ' ' + source + (evt?' '+evt:'') + '">'
-      + ('    ' + ++$log.lineTally).slice(-4) // line number
-      + ' ' + msg + '</div>' )
-    $log.lines = $log.lines.slice(0,10)
-    $log.innerHTML = ''
-      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
-      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
-      + $log.lines.join('\n')
-
-}//log()
+<div id="bkgnd"></div>
 
 
-//// Makes arbitrary text suitable for writing to the log.
-function sanitize (text) {
-    text = ''+text
-    if (80 < text.length) text = text.slice(0,80) + '...'
-    text = text.replace(/</g, '&lt;')
-    text = text.replace(/\n/g, '\\n')
-    return text
-}
+<div id="main">
+<!-- Begin section pasted from the repo -->
 
+<h2 id="about">About</h2>
+<p>TODO: About text</p>
 
-//// Create admin sample buttons.
-OOMPSH.addSampleButton = function (actions, method, config) {
-    for (let action in actions) {
-        const
-            $sample = document.createElement('A')
-          , tip     = actions[action].tip || ''
-          , eg      = actions[action].eg  || ''
-          , sample  = { method, action
-              , filter: (eg.match(/([-a-z0-9]+)$/)||[])[1] //@TODO better parser
-              , body:   (eg.match(/BODY {(.+)}/)||[])[1]   //@TODO better parser
-            }
-        sample.filter = sample.filter === action ? '' : sample.filter
-        sample.body = sample.body ? '{'+sample.body+'}' : ''
-        $sample.innerHTML = '/' + action + (sample.filter?'/'+sample.filter:'')
-        $sample.title = tip
-        $sample.addEventListener('click', evt => {
-            ['method','action','filter','body'].forEach( name => {
-                const $el = config['$'+name]
-                $el.value = sample[name] || ''
-                document.cookie = $el.id + '=' + sample[name]
-                OOMPSH.updateValidityHilite($el)
-            })
-            if (evt.altKey) setTimeout( () => OOMPSH.send(config), 1)
-        })
-        config.$samples.appendChild($sample)
-    }
-}//addSampleButton()
+<h4><a id="user-content-author" class="anchor" aria-hidden="true" href="#author"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Author</h4>
+<p>Designed, developed and authored by Rich Plastow for Loop.Coop.</p>
+<ul>
+<li><strong>Website:</strong>
+<a href="http://richplastow.com/" rel="nofollow">richplastow.com</a>
+<a href="https://loop.coop/" rel="nofollow">loop.coop</a></li>
+<li><strong>GitHub:</strong>
+<a href="https://github.com/richplastow">richplastow</a>
+<a href="https://github.com/loopdotcoop">loopdotcoop</a></li>
+<li><strong>Twitter:</strong>
+<a href="https://twitter.com/richplastow" rel="nofollow">@richplastow</a>
+<a href="https://twitter.com/loopdotcoop" rel="nofollow">@loopdotcoop</a></li>
+<li><strong>Location:</strong>
+Brighton, UK and Himachal Pradesh, India</li>
+</ul>
+<h4><a id="user-content-app" class="anchor" aria-hidden="true" href="#app"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>App</h4>
+<ul>
+<li><strong>Locales:</strong>
+<ul>
+<li>English</li>
+</ul>
+</li>
+<li><strong>Software:</strong>
+<ul>
+<li>Atom</li>
+<li>Git</li>
+</ul>
+</li>
+<li><strong>Languages:</strong>
+<ul>
+<li>HTML5</li>
+<li>CSS3</li>
+<li>JavaScript ES6</li>
+</ul>
+</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>None!</li>
+</ul>
+</li>
+</ul>
 
+<h2 id="config">Config</h2>
+<p>TODO: Config intro</p>
 
-//// Changes an empty INPUT to blue, valid to green, or invalid to red.
-//// Also, update wording of the ‘Begin * SSE Session’ button.
-OOMPSH.updateValidityHilite = function ($el) {
+<h4><a id="user-content-namespace" class="anchor" aria-hidden="true" href="#namespace"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Namespace</h4>
+<p>The global namespace is <code>window.OOMPSH</code> in a browser, or <code>global.OOMPSH</code> in the
+Node.js server.</p>
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span> <span class="pl-k">=</span> {}</pre></div>
+<h4><a id="user-content-configuration" class="anchor" aria-hidden="true" href="#configuration"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Configuration</h4>
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span>.<span class="pl-smi">configuration</span> <span class="pl-k">=</span> {
 
-    //// Get `usertype` and `name` from the INPUT’s ID.
-    const
-        parts = $el.id.split('-')
-      , name = parts.pop() // eg 'filter' or 'apiv'
-      , usertype = parts[0] // eg 'admin', 'enduser' (or undefined if apiv)
-    if (usertype && ! /^admin$|^enduser$/.test(usertype) )
-        throw Error(`usertype '${usertype}' invalid`)
+    <span class="pl-c1">VERSION</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>0.3.0<span class="pl-pds">'</span></span> <span class="pl-c"><span class="pl-c">//</span> the major part of this is also the API version, `APIV`</span>
+  , <span class="pl-k">get</span> <span class="pl-en">APIV</span> () { <span class="pl-k">return</span> <span class="pl-s"><span class="pl-pds">'</span>v<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span>.<span class="pl-smi">configuration</span>.<span class="pl-c1">VERSION</span>.<span class="pl-c1">split</span>(<span class="pl-s"><span class="pl-pds">'</span>.<span class="pl-pds">'</span></span>)[<span class="pl-c1">0</span>] }
 
-    //// Set the INPUT’s class depending on its validity.
-    if ('filter' === name) {
-        //@TODO combine OOMPSH.valid.filters
-    } else {
-        $el.className = $el.value ? OOMPSH.valid[name].test($el.value.trim())
-          ? 'valid' : 'invalid' : '' // green, red or blue
-    }
+    <span class="pl-c"><span class="pl-c">//</span>// Used as one of the default `domain` values in the frontend UI.</span>
+  , remoteURL<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>https://oompsh.herokuapp.com<span class="pl-pds">'</span></span>
 
-    //// Show a message after the '#domain' INPUT.
-    if ('domain' === $el.id) {
-        const $comment = document.querySelector('#domain-comment')
-        if (! $el.value)
-            $comment.innerHTML = ''
-        else if (! OOMPSH.valid.domain.test($el.value) )
-            $comment.innerHTML = 'Error: invalid domain'
-        else if ( OOMPSH.valid.local.test($el.value) )
-            $comment.innerHTML = 'https' === $el.value.slice(0,5)
-              ? '(local SSL server)' : '(local servers don’t have to use https)'
-        else
-            $comment.innerHTML = 'https' === $el.value.slice(0,5)
-              ? '(remote SSL server)' : 'Error: Remote servers must use https'
-        $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
-          ? 'invalid' : $el.value ? 'valid' : ''
-    }
+    <span class="pl-c"><span class="pl-c">//</span>// Part of the response with various errors.</span>
+  , apiURL<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>https://github.com/loopdotcoop/oompsh#api<span class="pl-pds">'</span></span>
+  , validatorsURL<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>https://github.com/loopdotcoop/oompsh#validators<span class="pl-pds">'</span></span>
 
-    //// Update wording of the ‘Begin * SSE Session’ button.
-    if (usertype) {
-        const
-            $user  = document.querySelector('#'+usertype+'-user')
-          , $pass  = document.querySelector('#'+usertype+'-pass')
-          , $begin = document.querySelector('#'+usertype+'-begin')
-        $begin.innerHTML = 'Begin '
-          + ( $user.value.trim() || $pass.value.trim() ? 'Admin' : 'Enduser')
-          + ' SSE Session'
+    <span class="pl-c"><span class="pl-c">//</span>// Maximum number of characters in...</span>
+  , maxMessageLength<span class="pl-k">:</span> <span class="pl-c1">2048</span> <span class="pl-c"><span class="pl-c">//</span> a 'notify' message</span>
+  , maxTitleLength<span class="pl-k">:</span> <span class="pl-c1">256</span> <span class="pl-c"><span class="pl-c">//</span> an 'add' title</span>
+
+    <span class="pl-c"><span class="pl-c">//</span>// Validators for the first character of a username or password, and for</span>
+    <span class="pl-c"><span class="pl-c">//</span>// subsequent characters.</span>
+  , c1<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>[a-zA-Z0-9!()_`~@<span class="pl-cce">\'</span>"^]<span class="pl-pds">'</span></span> <span class="pl-c"><span class="pl-c">//</span> not allowed to start with . or -</span>
+  , c2<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>[a-zA-Z0-9!()_`~@<span class="pl-cce">\'</span>"^.-]<span class="pl-pds">'</span></span>
+
+    <span class="pl-c"><span class="pl-c">//</span>// Initial values for the server’s ‘very very verbose’ and ‘very verbose’.</span>
+  , vvv<span class="pl-k">:</span> <span class="pl-c1">false</span> <span class="pl-c"><span class="pl-c">//</span> very very verbose logging @TODO implement</span>
+  , vv<span class="pl-k">:</span>  <span class="pl-c1">true</span>  <span class="pl-c"><span class="pl-c">//</span> very verbose logging (must be true if `vvv` is true) @TODO implement</span>
+
+}</pre></div>
+<h4><a id="user-content-api" class="anchor" aria-hidden="true" href="#api"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>API</h4>
+<p>Request URLs can have up to four parts:</p>
+<ol>
+<li>Oompsh <strong>API version,</strong> currently <code>v0</code>. This is the only mandatory part</li>
+<li><strong>Credentials,</strong> in the form <code>&lt;my-username&gt;:&lt;my-password&gt;</code>. Oompsh expects HTTPS!</li>
+<li>An <strong>action,</strong> eg <code>version</code>, <code>begin</code> or <code>notify</code></li>
+<li>A <strong>filter,</strong> eg <code>all</code>, <code>admin</code>, <code>enduser</code>, or an SSE client ID, eg <code>a1b2c3</code> <em>[@TODO ID filter]</em></li>
+</ol>
+<p>Requests must be sent with the correct method for that action, either <code>GET</code> or
+<code>POST</code>. All <code>POST</code> requests require credentials.</p>
+<p>Some of the <code>POST</code> actions, eg <code>notify</code>, also expect a request body to be sent, which
+should be JSON data. <em>[@TODO more POST actions with body]</em></p>
+<p>The <code>begin</code> action is a special case:</p>
+<ul>
+<li>It starts a ‘Server-Sent Events’ session, so needs headers like
+<code>Accept: text/event-stream</code> — you’ll probably use <code>new EventSource()</code> for this.</li>
+<li>If the URL contains credentials, an <strong>admin</strong> SSE session is opened, which listens
+for server log events. The filter can be blank, <code>vv</code> or <code>vvv</code> <em>[@TODO vv, vvv]</em></li>
+<li>If the URL <em>does not</em> contain credentials, an <strong>enduser</strong> SSE session is
+opened, which listens for data update events. The filter should be a
+comma-delimited list of WordPress post-types, eg <code>post,page,my-cpt</code> <em>[@TODO post types]</em></li>
+</ul>
+<div class="highlight highlight-source-js"><pre><span class="pl-k">const</span> <span class="pl-c1">OOMPSH</span> <span class="pl-k">=</span> <span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span>
+<span class="pl-k">const</span> <span class="pl-c1">api</span> <span class="pl-k">=</span> <span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span>.<span class="pl-smi">api</span> <span class="pl-k">=</span> {
+
+    <span class="pl-c"><span class="pl-c">//</span>// Endusers can only GET:</span>
+    enduser<span class="pl-k">:</span> {
+        <span class="pl-c1">GET</span><span class="pl-k">:</span>  {
+            <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span><span class="pl-k">:</span>         { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Retrieves a description of the API<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>version<span class="pl-pds">'</span></span><span class="pl-k">:</span>  { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/version<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Shows the app’s name and version<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>begin<span class="pl-pds">'</span></span><span class="pl-k">:</span>    { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>new EventSource('v0/connect/post,page,my-cpt')<span class="pl-pds">"</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Starts an enduser SSE session<span class="pl-pds">'</span></span> }
+        }
+      , <span class="pl-c1">POST</span><span class="pl-k">:</span> { }
     }
 
-}//updateValidityHilite()
-
-
-//// Sends a request to a URL and logs the result.
-OOMPSH.send = function (config) {
-
-    //// Use the `config` object to retrieve variables.
-    const { $apiv, $domain, $method, $user, $pass, $action, $filter, $body, logClient, logServer } = config
-    let apiv     =   $apiv.value.trim()
-      , domain   = $domain.value.trim()
-      , method   = $method.value.trim()
-      , action   = $action.value.trim()
-      , filter   = $filter.value.trim()
-      , body     =   $body.value.trim() || null
-      , bodyLog  = body ? sanitize(body) + ' to ' : ''
-      , user     =   $user.value.trim()
-      , pass     =   $pass.value.trim()
-      , creds    = user||pass ? user + ':' + pass + '/' : ''
-      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
-    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
-    apiv   = apiv   ? apiv   + '/' : '' // append a slash if `apiv` has been set
-    action = action ? action + '/' : filter ? '[action]/' : '' // don’t allow a blank ‘action’ if a ‘filter’ is specified
-    filter = filter ? filter + '/' : '' // allow a blank ‘filter’
-
-    //// Build the URL, eg 'http://localhost:1234/jo:pw/notify'.
-    const url    = (domain + apiv + creds    + action + filter).slice(0,-1)
-    const urlLog = (domain + apiv + credsLog + action + filter).slice(0,-1)
-
-    const init = 'GET' === method
-      ? {   method                     // *GET, POST, PUT, DELETE, etc.
-          , cache:       'no-cache'    // *default, no-cache, reload, force-c...
-          , mode:        'cors'        // *same-origin, no-cors, cors
-          , redirect:    'error'       // *manual, follow, error
-          , referrerPolicy:    'no-referrer' // *client, no-referrer
+    <span class="pl-c"><span class="pl-c">//</span>// Admins can do everything endusers can do, plus:</span>
+  , admin<span class="pl-k">:</span> {
+        <span class="pl-c1">GET</span><span class="pl-k">:</span>  {
+            <span class="pl-s"><span class="pl-pds">'</span>begin<span class="pl-pds">'</span></span><span class="pl-k">:</span>    { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>new EventSource('v0/usr:pwd/connect')<span class="pl-pds">"</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Starts an admin SSE session<span class="pl-pds">'</span></span> }
         }
-      : {   method                     // *GET, POST, PUT, DELETE, etc.
-          , cache:       'no-cache'    // *default, no-cache, reload, force-c...
-          , mode:        'cors'        // *same-origin, no-cors, cors
-          , redirect:    'error'       // *manual, follow, error
-          , referrerPolicy:    'no-referrer' // *client, no-referrer
-          , credentials: 'omit'        // *omit, include, same-origin @TODO omit?
-          , body                       // must match 'Content-Type' header
-          , headers: {
-                'Content-Type':'application/json'
-            }
+      , <span class="pl-c1">POST</span><span class="pl-k">:</span> {
+            <span class="pl-s"><span class="pl-pds">'</span>soft-end<span class="pl-pds">'</span></span><span class="pl-k">:</span> { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/usr:pwd/soft-end/enduser<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Asks SSE clients to close<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>hard-end<span class="pl-pds">'</span></span><span class="pl-k">:</span> { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/usr:pwd/hard-end/enduser<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Forces SSE clients to close<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>notify<span class="pl-pds">'</span></span><span class="pl-k">:</span>   { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"message":"Hello SSEs!"}<span class="pl-pds">'</span></span>
+                          <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> POST /v0/usr:pwd/notify/all<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Sends a message to SSE clients<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>test<span class="pl-pds">'</span></span><span class="pl-k">:</span>     { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/usr:pwd/test<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Runs the test-suite<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>add<span class="pl-pds">'</span></span><span class="pl-k">:</span>      { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":123, "title":"New Foo!"}<span class="pl-pds">'</span></span>
+                          <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> POST /v0/usr:pwd/add/foo-bar<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Tells endusers an item was created<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>edit<span class="pl-pds">'</span></span><span class="pl-k">:</span>     { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":123, "title":"Old Foo"}<span class="pl-pds">'</span></span>
+                          <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> POST /v0/usr:pwd/edit/foo-bar<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Tells endusers an item was modified<span class="pl-pds">'</span></span> }
+          , <span class="pl-s"><span class="pl-pds">'</span>delete<span class="pl-pds">'</span></span><span class="pl-k">:</span>   { eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":123}<span class="pl-pds">'</span></span>
+                          <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> POST /v0/usr:pwd/delete/foo-bar<span class="pl-pds">'</span></span>
+                       , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Tells endusers an item was removed<span class="pl-pds">'</span></span> }
         }
+    }
 
-    //// Log that `send()` has been called. @TODO log invalidation errors too
-    logClient({ok:`send() will ${method} ${bodyLog}${urlLog}`})
+    <span class="pl-c"><span class="pl-c">//</span>// The Oompsh server responds with one of these HTTP status codes.</span>
+  , status<span class="pl-k">:</span> {
+        <span class="pl-c1">200</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>OK<span class="pl-pds">'</span></span>
+      , <span class="pl-c1">401</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>UNAUTHORIZED<span class="pl-pds">'</span></span> <span class="pl-c"><span class="pl-c">//</span> nb, Oompsh doesn’t send a WWW-Authenticate header</span>
+      , <span class="pl-c1">404</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>NOT FOUND<span class="pl-pds">'</span></span>
+      , <span class="pl-c1">405</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>METHOD NOT ALLOWED<span class="pl-pds">'</span></span>
+      , <span class="pl-c1">406</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>NOT ACCEPTABLE<span class="pl-pds">'</span></span>
+      <span class="pl-c"><span class="pl-c">//</span> , 500: 'INTERNAL SERVER ERROR'</span>
+      , <span class="pl-c1">501</span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>NOT IMPLEMENTED<span class="pl-pds">'</span></span>
+    }
 
-    //// Use the Fetch API to make the request.
-    fetch(url, init)
-       .then( res => res.text() ) // parse response to JSON
-       .then( text => logServer(text) )
-       .catch(text => logServer(text) )
+    <span class="pl-c"><span class="pl-c">//</span>// 6000-8999: Ok.</span>
+  , ok<span class="pl-k">:</span> {
 
-}//send()
+        <span class="pl-c"><span class="pl-c">//</span>// 6000-6999: GET and OPTIONS.</span>
+        <span class="pl-c1">6000</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Retrieve the Oompsh API<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">6100</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/version<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Retrieve the Oompsh version<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">6900</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>OPTIONS /<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>You're probably a CORS preflight<span class="pl-pds">"</span></span> }
 
+        <span class="pl-c"><span class="pl-c">//</span>// 7000-7999: POST.</span>
+      , <span class="pl-c1">7010</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/o:k/soft-end/all<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Soft-End all<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">7020</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/o:k/hard-end/all<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Hard-End all<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">7030</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"message":"Hi!"} POST /v0/o:k/notify/all<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Notified n admin(s), n enduser(s)<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">7040</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":1,"title":"A"} POST /v0:o:k:add/post<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>'add' sent to n 'post' enduser(s)<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">7050</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":2,"title":"B"} POST /v0:o:k:edit/my-cpt<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>'edit' sent to n 'my-cpt' enduser(s)<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">7060</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"id":3,"title":"C"} POST /v0:o:k:delete/post<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>'delete' sent to n 'post' enduser(s)<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">7990</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/o:k/test<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Run tests<span class="pl-pds">'</span></span> }
 
-//// Starts an SSE (Server-Sent Events) connection.
-OOMPSH.begin = function (config) {
+        <span class="pl-c"><span class="pl-c">//</span>// 8000-4999: Admin and enduser SSE.</span>
+      , <span class="pl-c1">8000</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">200</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/begin<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Enduser SSE session is open<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">8010</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>end<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>soft-end<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>Asks SSE clients to close<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8020</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>end<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>hard-end<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>Warn before hard-end SSE clients<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8030</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>message<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>notify<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>Sends a message to SSE clients<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8040</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>bread<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>add<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An item was created<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8050</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>bread<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>edit<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An item was modified<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8060</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>bread<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>delete<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An item was removed<span class="pl-pds">"</span></span> }
 
-    //// Use the `config` object to retrieve variables.
-    const { $apiv, $domain, $user, $pass, $begin, $end, logClient, logServer, usertype } = config
-    let apiv     =   $apiv.value.trim()
-      , domain   = $domain.value.trim()
-      , user     =   $user.value.trim()
-      , pass     =   $pass.value.trim()
-      , creds    = user||pass ? user + ':' + pass + '/' : ''
-      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
-    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
-    apiv = apiv ? apiv + '/' : '' // append a slash if `apiv` has been set
+        <span class="pl-c"><span class="pl-c">//</span>// 8500-8999: Admin SSE logs.</span>
+      , <span class="pl-c1">8500</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>log<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>begin<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An SSE session opened<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8510</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>log<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>onSSEClientClose<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An SSE session closed<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">8520</span><span class="pl-k">:</span> { <span class="pl-c1">event</span><span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>log<span class="pl-pds">'</span></span>, type<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>hard-end<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>An admin closed some SSE sessions<span class="pl-pds">"</span></span> }
 
-    //// Build the URL, eg 'http://localhost:1234/jo:pw/begin/vvv'
-    const filter = 'admin' === usertype ? 'vvv' : 'foo-bar,baz'
-    const url    = domain + apiv + creds    + 'begin/' + filter
-    const urlLog = domain + apiv + credsLog + 'begin/' + filter
+    }
 
-    //// Log that `begin()` has been called.
-    if ('admin' !== usertype && 'enduser' !== usertype)
-        return logClient({ error:'Can’t begin: `usertype` invalid' })
-    if (config.es)
-        return logClient({ error:'Can’t begin: EventSource already connected' })
-    if (! window.EventSource)
-        return logClient({ error:'Can’t begin: EventSource not supported' })
-    logClient({ ok:`begin() will connect to ${urlLog}` })
+    <span class="pl-c"><span class="pl-c">//</span>// 9000-9999: Errors.</span>
+  , error<span class="pl-k">:</span> {
 
-    //// Update the buttons.
-    $begin.className = 'hid'
-    $end.className = ''
+        <span class="pl-c"><span class="pl-c">//</span>// 9000-9099: Oompsh startup errors.</span>
+        <span class="pl-c"><span class="pl-c">//</span>// @TODO</span>
 
-    const es = config.es = new EventSource(url)
-    es.addEventListener('message', evt => {
-        let data
-        try { data = JSON.parse(evt.data)
-        } catch (err) {
-            return logClient({ error:'JSON: ' + err.message })
-        }
-        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'message')
-    }, false)
+        <span class="pl-c"><span class="pl-c">//</span>// 9100-9199: Errors serving a file.</span>
+        <span class="pl-c1">9100</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">404</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /no-such-path!<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>No such path...<span class="pl-pds">'</span></span> }
 
-    es.addEventListener('open', evt =>
-        logClient({ ok:'Connection was opened' }), false)
+        <span class="pl-c"><span class="pl-c">//</span>// 9200-9299: URL-format errors.</span>
+      , <span class="pl-c1">9200</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">501</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v9999<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Wrong API version<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9210</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">401</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/-:-<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Invalid credentials<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9211</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">401</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/x:x<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Credentials not recognised<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9220</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">401</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/-:-<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Invalid credentials<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9221</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">401</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/x:x<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Credentials not recognised<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9222</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">401</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/notify<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>Can't POST without credentials<span class="pl-pds">"</span></span> }
+      , <span class="pl-c1">9230</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">404</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/o:k/non-existant<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>No such action...<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9231</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">404</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/non-existant<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>No such action...<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9240</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">404</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/o:k/non-existant<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>No such action...<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9260</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>POST /v0/o:k/soft-end/NO!<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Invalid filter...<span class="pl-pds">'</span></span> }
 
-    es.addEventListener('error', evt => {
-        evt = evt.originalTarget || evt // prefer the original error event
-        if (EventSource.CONNECTING === evt.readyState)
-            end(config, 'of an SSE error (readyState is CONNECTING)')
-        else if (EventSource.OPEN === evt.readyState)
-            end(config, 'of an SSE error (readyState is OPEN)')
-        else if (EventSource.CLOSED === evt.readyState)
-            end(config, 'of an SSE error (readyState is CLOSED)')
-        else if (null != evt.readyState)
-            logClient({ error:'Unexpected readyState ' + evt.readyState }) // should not be possible?
-        else
-            logClient({ error:'No evt.readyState: ' + JSON.stringify(evt) })
-    }, false)
+        <span class="pl-c"><span class="pl-c">//</span>// 9300-9399: General header and body errors.</span>
+      , <span class="pl-c1">9300</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">405</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>DELETE /v0<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Use GET, POST or OPTIONS<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9320</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY [ POST /v0/o:k/notify/all<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Unparseable body<span class="pl-pds">'</span></span> }
+      , <span class="pl-c1">9330</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY 5 POST /v0/o:k/notify/all<span class="pl-pds">'</span></span>, tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>Non-object body<span class="pl-pds">'</span></span> }
 
-    //// Custom events.
-    es.addEventListener('end', evt => {
-        let data
-        try { data = JSON.parse(evt.data)
-        } catch (err) {
-            return logClient({ error:'JSON: ' + err.message })
-        }
-        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'end')
-        if ('soft-end' === data.type)
-            end(config, "of 'soft-end' event")
-    }, false)
+        <span class="pl-c"><span class="pl-c">//</span>// 9400-9499: SSE session errors.</span>
+      , <span class="pl-c1">9400</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>GET /v0/begin without Accept header<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">"</span>Missing 'Accept: text/event-stream' header<span class="pl-pds">"</span></span> }
 
-    es.addEventListener('log', evt => {
-        let data
-        try { data = JSON.parse(evt.data)
-        } catch (err) {
-            return logClient({ error:'JSON: ' + err.message })
-        }
-        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'log')
-    }, false)
+        <span class="pl-c"><span class="pl-c">//</span>// 9500-9999: Errors specific to actions.</span>
+      , <span class="pl-c1">9530</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"No":"Message"} POST /v0/o:k/notify/all<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">`</span>Body should be '{"message":"Hi!"}'<span class="pl-pds">`</span></span> }
+      , <span class="pl-c1">9540</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"title":"No ID!"} POST /v0/o:k/add/page<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">`</span>Body should be '{"id":9,"title":"A New Page"}'<span class="pl-pds">`</span></span> }
+      , <span class="pl-c1">9550</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"title":"No ID!"} POST /v0/o:k/edit/page<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">`</span>Body should be '{"id":9,"title":"An Updated Page"}'<span class="pl-pds">`</span></span> }
+      , <span class="pl-c1">9560</span><span class="pl-k">:</span> { status<span class="pl-k">:</span><span class="pl-c1">406</span>, eg<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>BODY {"not-id":9} POST /v0/o:k/delete/page<span class="pl-pds">'</span></span>
+          , tip<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">`</span>Body should be '{"id":9}'<span class="pl-pds">`</span></span> }
+    }
 
-    es.addEventListener('bread', evt => {
-        let data
-        try { data = JSON.parse(evt.data)
-        } catch (err) {
-            return logClient({ error:'JSON: ' + err.message })
-        }
-        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
-        logServer(data, 'bread')
-    }, false)
-
-}//begin()
-
-
-//// Closes an SSE (Server-Sent Events) connection.
-function end (config, reason="the ‘End’ button was clicked") {
-
-    //// Log that `end()` has been called.
-    config.logClient({ ok:'Closing SSE session because ' + reason })
-    if (! config.es)
-        return config.logClient({error:'Can’t end: EventSource not connected'})
-
-    //// Close the connection and make `es` falsey.
-    config.es.close()
-    config.es = null
-
-    //// Update the buttons.
-    config.$begin.className = ''
-    config.$end.className = 'hid'
-}
-OOMPSH.end = end
-
-
-}(this)</script>
-
-
-
-
-<!-- The API version and domain, used by the Admin Client and Enduser Client -->
-<input id="apiv" placeholder="v?"></input>
-<input id="domain" placeholder="domain"></input>
-<span id="domain-comment"></span>
-
-
-
-
-<!-- Admin Client -->
-<hr>
-<div id="admin-samples" class="samples">
-  <button id="admin-begin">Begin Admin SSE Session</button>
-  <button id="admin-end" class="hid">End SSE Session</button>
-</div>
-<div class="table">
-  <input  id="admin-method" placeholder="method"></input><input
-          id="admin-user"   placeholder="username"></input><input
-          id="admin-pass"   placeholder="password"></input><input
-          id="admin-action" placeholder="action"></input><input
-          id="admin-filter" placeholder="filter"></input>
-</div>
-<div class="table">
-  <input  id="admin-body"   placeholder="body"></input><button
-          id="admin-send">Send</button>
-</div>
-<pre id="admin-log">Loading...</pre>
-<script>!function(ROOT){
-const OOMPSH = ROOT.OOMPSH
-
-//// Initialise the admin config and EventSource object.
-const config = {
-    usertype: 'admin'
-  , es: null
+  , code<span class="pl-k">:</span> <span class="pl-c1">6000</span> <span class="pl-c"><span class="pl-c">//</span> every API response has a code</span>
 }
 
-//// Add config’s references to the various admin input fields and buttons.
-config.$apiv   = document.querySelector('#apiv')
-config.$domain = document.querySelector('#domain')
-'begin,end,samples,method,user,pass,action,filter,body,send,log'
-   .split(',')
-   .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
-const { $send, $begin, $end, $samples, $log } = config
+<span class="pl-c"><span class="pl-c">//</span>// Duplicate all enduser actions to admin.</span>
+<span class="pl-smi">api</span>.<span class="pl-smi">admin</span>.<span class="pl-c1">GET</span>  <span class="pl-k">=</span> <span class="pl-c1">Object</span>.<span class="pl-en">assign</span>({}, <span class="pl-smi">api</span>.<span class="pl-smi">enduser</span>.<span class="pl-c1">GET</span>, <span class="pl-smi">api</span>.<span class="pl-smi">admin</span>.<span class="pl-c1">GET</span>)
+<span class="pl-smi">api</span>.<span class="pl-smi">admin</span>.<span class="pl-c1">POST</span> <span class="pl-k">=</span> <span class="pl-c1">Object</span>.<span class="pl-en">assign</span>({}, <span class="pl-smi">api</span>.<span class="pl-smi">enduser</span>.<span class="pl-c1">POST</span>, <span class="pl-smi">api</span>.<span class="pl-smi">admin</span>.<span class="pl-c1">POST</span>)</pre></div>
+<h4><a id="user-content-validators" class="anchor" aria-hidden="true" href="#validators"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Validators</h4>
+<div class="highlight highlight-source-js"><pre><span class="pl-k">const</span> <span class="pl-c1">OOMPSH</span> <span class="pl-k">=</span> <span class="pl-c1">ROOT</span>.<span class="pl-c1">OOMPSH</span>
+    , { c1, c2, maxMessageLength<span class="pl-k">:</span>mml, maxTitleLength<span class="pl-k">:</span>mtl }
+        <span class="pl-k">=</span> <span class="pl-c1">OOMPSH</span>.<span class="pl-smi">configuration</span>
+    , { admin, enduser } <span class="pl-k">=</span> <span class="pl-c1">OOMPSH</span>.<span class="pl-smi">api</span>
 
-//// Set up admin logging.
-config.logClient = OOMPSH.logClient.bind($log)
-config.logServer = OOMPSH.logServer.bind($log)
-$log.lineTally = 0
-$log.lines = Array(10).fill('<div>&nbsp;</div>')
+<span class="pl-c1">OOMPSH</span>.<span class="pl-smi">valid</span> <span class="pl-k">=</span> {
+    local<span class="pl-k">:</span><span class="pl-sr">  <span class="pl-pds">/</span><span class="pl-k">^</span>https<span class="pl-k">?</span>:<span class="pl-cce">\/\/</span>(127<span class="pl-cce">\.</span>0<span class="pl-cce">\.</span>0<span class="pl-cce">\.</span>1<span class="pl-k">|</span>localhost)<span class="pl-pds">/</span></span>
+  , domain<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span>https<span class="pl-k">?</span>:<span class="pl-cce">\/\/</span><span class="pl-c1">[-:<span class="pl-c1">.</span><span class="pl-c1">a-z0-9</span>]</span><span class="pl-k">+</span><span class="pl-cce">\/</span><span class="pl-k">?</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>
 
-//// Log a ready message.
-config.logClient({ ok:'Ready to send' })
+  , oompshID<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">\d</span><span class="pl-c1">[<span class="pl-c1">a-z</span><span class="pl-c1">\d</span>]</span><span class="pl-k">{6}</span><span class="pl-k">$</span><span class="pl-pds">/</span></span> <span class="pl-c"><span class="pl-c">//</span> a digit, then six digits or l.c. letters</span>
 
-//// Set up admin buttons.
-$send.addEventListener( 'click', evt => OOMPSH.send(config) )
-$begin.addEventListener( 'click', evt => OOMPSH.begin(config) )
-$end.addEventListener( 'click', evt => OOMPSH.end(config) )
+    <span class="pl-c"><span class="pl-c">//</span>// Username, password and credentials.</span>
+  , user<span class="pl-k">:</span>  <span class="pl-k">new</span> <span class="pl-en">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^(<span class="pl-s1"><span class="pl-pse">${</span>c1<span class="pl-pse">}${</span>c2<span class="pl-pse">}</span></span>{0,64})$<span class="pl-pds">`</span></span>)
+  , pass<span class="pl-k">:</span>  <span class="pl-k">new</span> <span class="pl-en">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^(<span class="pl-s1"><span class="pl-pse">${</span>c1<span class="pl-pse">}${</span>c2<span class="pl-pse">}</span></span>{0,64})$<span class="pl-pds">`</span></span>)
+  , creds<span class="pl-k">:</span> <span class="pl-k">new</span> <span class="pl-en">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^<span class="pl-s1"><span class="pl-pse">${</span>c1<span class="pl-pse">}${</span>c2<span class="pl-pse">}</span></span>{0,64}:<span class="pl-s1"><span class="pl-pse">${</span>c1<span class="pl-pse">}${</span>c2<span class="pl-pse">}</span></span>{0,64}$<span class="pl-pds">`</span></span>)
 
-//// Create admin sample buttons.
-OOMPSH.addSampleButton(OOMPSH.api.admin.GET, 'GET', config)
-OOMPSH.addSampleButton(OOMPSH.api.admin.POST, 'POST', config)
+  , apiv<span class="pl-k">:</span><span class="pl-sr">   <span class="pl-pds">/</span><span class="pl-k">^</span>v<span class="pl-c1">\d</span><span class="pl-k">+</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>
+  , domain<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span>https<span class="pl-k">?</span>:<span class="pl-cce">\/\/</span><span class="pl-c1">[-:<span class="pl-c1">.</span><span class="pl-c1">a-z0-9</span>]</span><span class="pl-k">+</span><span class="pl-cce">\/</span><span class="pl-k">?</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>
+  , method<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span>(GET<span class="pl-k">|</span>POST<span class="pl-k">|</span>OPTIONS)<span class="pl-k">$</span><span class="pl-pds">/</span></span>
+  , action<span class="pl-k">:</span> <span class="pl-k">new</span> <span class="pl-en">RegExp</span>( <span class="pl-s"><span class="pl-pds">`</span>^(<span class="pl-pds">`</span></span>
+      <span class="pl-k">+</span> <span class="pl-c1">Object</span>.<span class="pl-c1">keys</span>(<span class="pl-smi">admin</span>.<span class="pl-c1">GET</span>).<span class="pl-c1">join</span>(<span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>
+      <span class="pl-k">+</span> <span class="pl-c1">Object</span>.<span class="pl-c1">keys</span>(<span class="pl-smi">admin</span>.<span class="pl-c1">POST</span>).<span class="pl-c1">join</span>(<span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>
+      <span class="pl-k">+</span> <span class="pl-c1">Object</span>.<span class="pl-c1">keys</span>(<span class="pl-smi">enduser</span>.<span class="pl-c1">GET</span>).<span class="pl-c1">join</span>(<span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>
+      <span class="pl-k">+</span> <span class="pl-c1">Object</span>.<span class="pl-c1">keys</span>(<span class="pl-smi">enduser</span>.<span class="pl-c1">POST</span>).<span class="pl-c1">join</span>(<span class="pl-s"><span class="pl-pds">'</span>|<span class="pl-pds">'</span></span>)
+      <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">`</span>)$<span class="pl-pds">`</span></span> )
 
-}(this)</script>
+    <span class="pl-c"><span class="pl-c">//</span>// Filters.</span>
+  , filter<span class="pl-k">:</span> {
+        standard<span class="pl-k">:</span> { <span class="pl-c"><span class="pl-c">//</span>@TODO rename `user`</span>
+            oompshID<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">\d</span><span class="pl-c1">[<span class="pl-c1">a-z</span><span class="pl-c1">\d</span>]</span><span class="pl-k">{6}</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>
+          , usertype<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span>(admin<span class="pl-k">|</span>enduser)<span class="pl-k">$</span><span class="pl-pds">/</span></span>
+          , group<span class="pl-k">:</span><span class="pl-sr">    <span class="pl-pds">/</span><span class="pl-k">^</span>all<span class="pl-k">$</span><span class="pl-pds">/</span></span> } <span class="pl-c"><span class="pl-c">//</span> currently there is only one group</span>
+      , bread<span class="pl-k">:</span> {
+            posttype<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span>(<span class="pl-c1">[_<span class="pl-c1">a-z</span>][-_<span class="pl-c1">a-z0-9</span>]</span><span class="pl-k">{0,32}</span>)<span class="pl-k">$</span><span class="pl-pds">/</span></span> }
+    }
+  <span class="pl-c"><span class="pl-c">//</span> , filter: /^.+$/ //@TODO a combination of all of the above?</span>
 
+    <span class="pl-c"><span class="pl-c">//</span>// Body.</span>
+  , notifyBody<span class="pl-k">:</span> { message<span class="pl-k">:</span><span class="pl-c1">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^.{1,<span class="pl-s1"><span class="pl-pse">${</span>mml<span class="pl-pse">}</span></span>}$<span class="pl-pds">`</span></span>) }
+  , addBody<span class="pl-k">:</span> { id<span class="pl-k">:</span><span class="pl-sr"><span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">\d</span><span class="pl-k">+</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>, title<span class="pl-k">:</span> <span class="pl-c1">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^.{1,<span class="pl-s1"><span class="pl-pse">${</span>mtl<span class="pl-pse">}</span></span>}$<span class="pl-pds">`</span></span>) }
+  , editBody<span class="pl-k">:</span> { id<span class="pl-k">:</span><span class="pl-sr"><span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">\d</span><span class="pl-k">+</span><span class="pl-k">$</span><span class="pl-pds">/</span></span>, title<span class="pl-k">:</span> <span class="pl-c1">RegExp</span>(<span class="pl-s"><span class="pl-pds">`</span>^.{1,<span class="pl-s1"><span class="pl-pse">${</span>mtl<span class="pl-pse">}</span></span>}$<span class="pl-pds">`</span></span>) }
+  , deleteBody<span class="pl-k">:</span> { id<span class="pl-k">:</span><span class="pl-sr"><span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">\d</span><span class="pl-k">+</span><span class="pl-k">$</span><span class="pl-pds">/</span></span> }
+  , body<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span><span class="pl-k">^</span><span class="pl-c1">.</span><span class="pl-k">+</span><span class="pl-k">$</span><span class="pl-pds">/</span></span> <span class="pl-c"><span class="pl-c">//</span>@TODO a combination of all of the above?</span>
+}</pre></div>
 
+<h2 id="fork">Fork</h2>
+<p>TODO: How to install etc</p>
 
-
-<!-- Enduser Client -->
-<hr>
-<div id="enduser-samples" class="samples">
-  <button id="enduser-begin">Begin Enduser SSE Session</button>
-  <button id="enduser-end" class="hid">End SSE Session</button>
-</div>
-<div class="table">
-  <input  id="enduser-method" placeholder="method"></input><input
-          id="enduser-user"   placeholder="username"></input><input
-          id="enduser-pass"   placeholder="password"></input><input
-          id="enduser-action" placeholder="action"></input><input
-          id="enduser-filter" placeholder="filter"></input>
-</div>
-<div class="table">
-  <input  id="enduser-body"   placeholder="body"></input><button
-          id="enduser-send">Send</button>
-</div>
-<pre id="enduser-log">Loading...</pre>
-<script>!function(ROOT){
-const OOMPSH = ROOT.OOMPSH
-
-
-//// Initialise the enduser config and EventSource object.
-const config = {
-    usertype: 'enduser'
-  , es: null
-}
-
-//// Add config’s references to the various admin input fields and buttons.
-config.$apiv   = document.querySelector('#apiv')
-config.$domain = document.querySelector('#domain')
-'begin,end,samples,method,user,pass,action,filter,body,send,log'
-   .split(',')
-   .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
-const { $send, $begin, $end, $samples, $log } = config
-
-//// Set up enduser logging.
-config.logClient = OOMPSH.logClient.bind($log)
-config.logServer = OOMPSH.logServer.bind($log)
-$log.lineTally = 0
-$log.lines = Array(10).fill('<div>&nbsp;</div>')
-
-//// Log a ready message.
-config.logClient({ ok:'Ready to connect' })
-
-//// Set up enduser buttons.
-$send.addEventListener( 'click', evt => OOMPSH.send(config) )
-$begin.addEventListener( 'click', evt => OOMPSH.begin(config) )
-$end.addEventListener( 'click', evt => OOMPSH.end(config) )
-
-//// Create enduser sample buttons.
-OOMPSH.addSampleButton(OOMPSH.api.enduser.GET, 'GET', config)
-OOMPSH.addSampleButton(OOMPSH.api.enduser.POST, 'POST', config)
-
-}(this)</script>
+<h4><a id="user-content-heroku" class="anchor" aria-hidden="true" href="#heroku"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Heroku</h4>
+<p>Once Heroku is set up, you can check for current environment (config) variables:<br>
+<code>$ heroku run printenv</code></p>
+<p>You’ll need to choose an admin username and password, and record it in the
+<code>OOMPSH_ADMIN_CREDENTIALS</code> config var:<br>
+<code>$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=&lt;admin-username&gt;:&lt;admin-password&gt;</code></p>
+<p>You can define any number of admin credentials this way, eg:<br>
+<code>$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass,pat:foobar</code><br>
+Note that oompsh.js throws an error on startup if any credentials are invalid.</p>
+<p>After each <code>$ git commit</code> and <code>$ git push</code>, you should redeploy the app:<br>
+<code>$ git push heroku master</code></p>
+</article>
 
 
 
+<h2 id="faq">FAQ</h2>
+<p>TODO: add this section</p>
 
-<!-- 1. Persist INPUT values after refresh (Firefox does this automatically) -->
-<!-- 2. Highlight inputs blue, green or red depending on their validity -->
-<!-- 3. Provide defaults for the API version and domain -->
-<script>!function(ROOT){
-    const $$inputs = document.querySelectorAll('input')
 
-    //// Restore INPUT values to their previous values, if any.
-    //// Also, highlight inputs blue, green or red depending on their validity.
-    prevVals = {}
-    document.cookie.split(';').forEach( keyval => {
-        [ key, val ] = keyval.trim().split('=')
-        prevVals[key] = val
-    })
-    $$inputs.forEach( $el => {
-        $el.value = prevVals[$el.id] || ''
-        OOMPSH.updateValidityHilite($el)
-    })
+<!-- End section pasted from the repo -->
+</div><!-- #main -->
 
-    //// Update cookies and validity-highlight every time an input changes.
-    $$inputs.forEach( $el => $el.addEventListener('input',
-        evt => {
-            document.cookie = $el.id + '=' + $el.value
-            OOMPSH.updateValidityHilite($el)
-        }
-    ) )
 
-    //// Provide defaults for the API version and domain.
-    const
-        $apiv         = document.querySelector('#apiv')
-      , $domain       = document.querySelector('#domain')
-      , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
-      , pgDomain      = ( location.href.match(matchDomainRx) || [])[0]
-    $apiv.value   = $apiv.value || OOMPSH.configuration.APIV
-    $domain.value = ROOT.OOMPSH.valid.domain.test($domain.value) ? $domain.value
-      : (ROOT.OOMPSH.valid.local.test(pgDomain) ? pgDomain
-      : ROOT.OOMPSH.configuration.remoteURL)
-    OOMPSH.updateValidityHilite($apiv)
-    OOMPSH.updateValidityHilite($domain)
 
-}(this)</script>
+<br><br><br><br><br><br>
 
 
 

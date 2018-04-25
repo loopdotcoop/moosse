@@ -1,0 +1,333 @@
+/* LAYOUT */
+
+body {
+    margin: 0 1em;
+		overflow-x: hidden;
+		min-width: 280px;
+}
+#bkgnd {
+	  z-index: -1;
+	  position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+}
+.container {
+    padding-bottom: 1em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    border-radius: 1em;
+}
+
+
+
+
+/* FONTS */
+
+body {
+    font-family: 'Ubuntu', sans-serif;
+}
+pre, tt, code, kbd, samp, var {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+
+
+
+/* COLOURS */
+
+.container {
+    background: #fff;
+}
+h1, h2, .h1, .h2 {
+    color: #993300;
+		filter: hue-rotate(0) saturate(200%);
+}
+a,
+nav .burger {
+    color: #993300;
+		filter: hue-rotate(0) saturate(200%);
+    transition: filter 1s;
+}
+a:hover,
+nav .burger:hover {
+    color: #993300; /* override bootstrap */
+    filter: hue-rotate(-90deg) saturate(100%);
+}
+h1, h2, .h1, .h2 {
+    animation-duration: 30s;
+    animation-iteration-count: infinite;
+    animation-name: textcolor-1;
+}
+@keyframes textcolor-1 {
+    0%   { filter: hue-rotate(0) saturate(200%) }
+
+    20%  { filter: hue-rotate(0) saturate(150%) }
+    25%  { filter: hue-rotate(-45deg) saturate(150%) }
+
+    45%  { filter: hue-rotate(-45deg) saturate(400%) }
+    50%  { filter: hue-rotate(0) saturate(400%) }
+
+    70%  { filter: hue-rotate(0) saturate(150%) }
+    75%  { filter: hue-rotate(15deg) saturate(150%) }
+
+    95%  { filter: hue-rotate(15deg) saturate(200%) }
+    100% { filter: hue-rotate(0) saturate(200%) }
+}
+
+
+
+
+
+/* TYPOGRAPHY */
+
+h1, h2, .h1, .h2 {
+    font-weight: bold;
+}
+h1, h2, .h1, .h2 {
+    padding-top: 2em; /* headed does not obliterate heading after #link click */
+}
+h3, h4, .h3, .h4 {
+    margin-top: 1em;
+}
+
+
+
+
+/* HEADER */
+
+header {
+	  z-index: 1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 55px;
+    background: #fff;
+    transition: opacity 1s, visibility 1s 0s;
+}
+body.at-top header {
+    opacity: 0;
+    visibility: hidden;
+}
+header .logo-wrap {
+    display: block;
+}
+header a.logo-wrap:hover {
+    filter: none; /* override hue-rotate(-90deg) */
+}
+
+header .logo-wrap >span {
+    position: absolute;
+    overflow: hidden;
+    transform-origin: top left;
+}
+#logo-image {
+    top: 4px;
+    left: 4px;
+    width: 700px;
+    height: 700px;
+    transform: scale(0.0625, 0.0625);
+}
+#logo-image .logo {
+    margin: -130px 0 0 -250px;
+}
+#logo-text {
+    top: 10px;
+    left: 50px;
+    width: 900px;
+    height: 150px;
+    transform: scale(0.2, 0.2);
+}
+#logo-text .logo {
+    margin: -820px 0 0 -190px;
+}
+nav {
+    float: right;
+    padding-right: 0.2em;
+}
+nav .burger {
+    position: fixed;
+    display: none;
+    top: -10px;
+    right: 7px;
+    padding: 0 0.2em;
+    font-size: 48px;
+    line-height: 8px;
+    color: #993300;
+    cursor: pointer;
+}
+nav a {
+    display: inline-block;
+    padding: 0.9em 0.5em;
+    background: #fff;
+}
+@media screen and (max-width: 540px) {
+	  nav {
+			  overflow: visible;
+				height: 400px;
+        transition: height 0.5s 0s;
+		}
+    body.show-burger nav {
+			  overflow: hidden;
+				height: 50px;
+    }
+    nav .burger {
+        display: block;
+    }
+    nav a:first-of-type {
+        margin-top: 3em;
+    }
+    nav a {
+        display: block;
+        transform: translate(2em,0);
+        transition: transform 0.5s, filter 0.5s;
+        padding: 0.5em 5em 0.5em 1.5em;
+    }
+    body.show-burger nav a {
+        transform: translate(10em,0);
+    }
+}
+
+
+
+
+/* HOMEPAGE INTRO */
+
+#intro {
+    text-align: center;
+		padding-top: 2px;
+}
+#intro .logo {
+    display: block;
+    width: 60%;
+    min-width: 260px;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0;
+    visibility: hidden;
+		outline: 2px solid #fff; /* prevent occasional background appearing at edges */
+		outline-offset: -1px;
+    transition: opacity 1s, visibility 1s 0s;
+}
+body.at-top #intro .logo {
+    opacity: 1;
+    visibility: visible;
+}
+#intro h2 {
+    padding-top: 0;
+}
+@media screen and (max-width: 767px) {
+    #intro h2 { font-size: 1.5em; }
+    #intro h4 { font-size: 1.2em; }
+}
+
+
+
+
+/* HOMEPAGE MAIN */
+
+#main {
+    max-width: 55em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+
+
+/* TIDY GH */
+.octicon-link {
+    display: none;
+}
+div.highlight {
+    font-size: 1.25em;
+    padding: 0.5em;
+    background: #eee;
+    border-radius: 0.5em;
+}
+div.highlight pre {
+		overflow-x: scroll;
+}
+code {
+    font-size: 1em;
+    padding: 0.1em 0.3em 0.2em;
+    background: #eee;
+    color: #000;
+    border-radius: 0.15em;
+}
+pre .pl-k   { color:#d73a49 } /* reserved words and punctution */
+pre .pl-c1  { color:#005cc5 } /* variables */
+pre .pl-cce { color:#d73a49 } /* escaped string */
+pre .pl-c   { color:#6a737d } /* comment */
+pre .pl-en  { color:#6f42c1 } /* JS Objects */
+@media screen and (max-width: 991px) {
+	  div.highlight { font-size: 1em; }
+}
+@media screen and (max-width: 767px) {
+	  div.highlight { font-size: 0.8em; }
+}
+
+
+
+
+/* BACKGROUND */
+
+/* html {
+		background-attachment: fixed;
+}
+html, */
+#bkgnd,
+header .logo-wrap >span,
+#intro .logo {
+    background:
+      radial-gradient(
+        ellipse at 0% 25%
+        , #993300 25%, transparent 70%, #993300 75%, transparent 80%
+      ),
+      radial-gradient(
+        ellipse at 100% 75%
+        , #85279f 25%, #000 70%, #85279f 75%, #000 80%
+      );
+    background-size: 100% 100%;
+    filter: hue-rotate(0) saturate(200%);
+}
+header .logo-wrap >span,
+#intro .logo {
+    animation-duration: 30s;
+    animation-iteration-count: infinite;
+    animation-name: abstract-1;
+}
+@keyframes abstract-1 {
+    0%   { filter: hue-rotate(0) saturate(200%); background-size: 100% 100% }
+
+    20%  { filter: hue-rotate(0) saturate(150%) }
+    25%  { filter: hue-rotate(-45deg) saturate(150%) }
+
+    45%  { filter: hue-rotate(-45deg) saturate(400%) }
+    50%  { filter: hue-rotate(0) saturate(400%); background-size: 100% 300% }
+
+    70%  { filter: hue-rotate(0) saturate(150%) }
+    75%  { filter: hue-rotate(15deg) saturate(150%) }
+
+    95%  { filter: hue-rotate(15deg) saturate(200%) }
+    100% { filter: hue-rotate(0) saturate(200%); background-size: 100% 100% }
+}
+
+
+
+
+/* UTILITY */
+
+.hid {
+    display: none;
+}
+.nopad {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+.rr {
+    text-align: right;
+}

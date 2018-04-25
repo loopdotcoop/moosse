@@ -1,0 +1,638 @@
+<!DOCTYPE HTML>
+<html lang="en-GB">
+<head>
+
+
+
+
+<!-- META -->
+
+<!-- Technical meta -->
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport"
+   content="width=device-width, initial-scale=1.0, shrink-to-fit=no,
+            maximum-scale=1.0, user-scalable=no">
+
+<!-- Search engine meta -->
+<title>Moosse 0.3.2 Demo</title>
+<meta name="description"
+   content="Mutable Objects Over Server-Sent Events.
+   A Node.js server which push-notifies endusers when shared resources change">
+<link rel="author" href="../README.md">
+
+<!-- Twitter Card, and Open Graph for Facebook, LinkedIn, Google+, etc -->
+<meta name="twitter:card"    content="summary">
+<meta name="twitter:site"    content="@loopdotcoop">
+<meta name="twitter:creator" content="@richplastow">
+<meta property="og:type"     content="website">
+<meta property="og:locale"   content="en_GB">
+<meta property="og:title"    content="Moosse 0.3.2 Demo">
+<meta property="og:url"      content="http://moosse.loop.coop/">
+<meta property="og:image"
+       content="http://moosse.loop.coop/support/asset/logo/logo-1200x1200.svg">
+<meta property="og:description"
+       content="Mutable Objects Over Server-Sent Events.
+       A Node.js server which push-notifies endusers when shared resources change">
+
+<!-- From realfavicongenerator.net - see README.md for settings -->
+<link rel="apple-touch-icon" sizes="180x180" href="asset/icon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="96x96" href="asset/icon/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="32x32" href="asset/icon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="asset/icon/favicon-16x16.png">
+<link rel="manifest"                  href="asset/icon/manifest.json">
+<link rel="mask-icon" color="#993300" href="asset/icon/safari-pinned-tab.svg">
+<link rel="shortcut icon"             href="asset/icon/favicon.ico">
+<meta name="apple-mobile-web-app-title" content="Moosse">
+<meta name="application-name"           content="Moosse">
+<meta name="msapplication-config"       content="asset/icon/browserconfig.xml">
+<meta name="theme-color"                content="#993300">
+
+
+
+
+<!-- STYLE -->
+
+<!-- Load fonts as soon as possible -->
+<style>
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-style: normal;
+  src: local('Ubuntu Regular'), local('Ubuntu-Regular')
+    , url(asset/font/ubuntu-regular.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+@font-face { font-family: 'Ubuntu'; font-weight: 400; font-style: italic;
+  src: local('Ubuntu Italic'), local('Ubuntu-Italic')
+    , url(asset/font/ubuntu-italic.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-style: normal;
+  src: local('Ubuntu Bold'), local('Ubuntu-Bold')
+    , url(asset/font/ubuntu-bold.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+@font-face { font-family: 'Ubuntu'; font-weight: 700; font-style: italic;
+  src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic')
+    , url(asset/font/ubuntu-bolditalic.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+@font-face { font-family: 'Ubuntu Mono'; font-weight: 400; font-style: normal;
+  src: local('Ubuntu Mono'), local('UbuntuMono-Regular')
+    , url(asset/font/ubuntumono-regular.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA
+    , U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+</style>
+
+<!-- Load styles -->
+<link rel="stylesheet" href="asset/css/bootstrap.4.0.0.min.css">
+<link rel="stylesheet" href="asset/css/main.css">
+<link rel="stylesheet" href="asset/css/demo.css">
+
+
+
+
+</head>
+<body id="demo" class="show-burger">
+<div class="container">
+
+
+
+
+<!-- Header and Navigation menu -->
+<!-- <h2>Moosse 0.3.2</h2> -->
+<header>
+
+  <a href="../index.html" class="logo-wrap">
+    <span id="logo-image">
+      <img class="logo" alt="Oom.Foo Logo" src="asset/logo/logo-1200x1000-tow.svg">
+    </span>
+    <span id="logo-text" class="d-none d-md-block">
+      <img class="logo" alt="Oom.Foo Logo" src="asset/logo/logo-1200x1000-tow.svg">
+    </span>
+  </a>
+
+  <nav>
+    <div class="burger">_<br>_<br>_</div>
+    <a href="../index.html#about">About</a>
+    <a href="demo.html">Demo</a>
+    <a href="test.html">Test</a>
+    <a href="https://www.npmjs.com/package/moosse">NPM</a>
+    <a href="https://github.com/loopdotcoop/moosse">Repo</a>
+  </nav>
+
+</header>
+<!-- show burger-menu --><script>document.querySelector('nav').addEventListener(
+'click',function(e){document.body.classList.toggle('show-burger')})</script>
+
+<div id="bkgnd"></div>
+<br><br>
+
+
+
+<!-- Load the MOOSSE namespace, with configuration, API and validators -->
+<script src="../moosse-config.js"></script>
+
+
+
+
+<!-- Add browser functions to the MOOSSE namespace -->
+
+<script>!function(ROOT){
+const MOOSSE = ROOT.MOOSSE
+
+
+//// CLIENT UTILITIES
+
+//// logClient()
+//// logServer()
+//// updateValidityHilite()
+//// send()
+//// begin()
+//// end()
+
+
+//// `logClient()` and `logServer()` both add a line to the onscreen logs.
+//// `logClient()` is used to log activity happening in the browser.
+//// `logServer()` is used to log messages from the server.
+MOOSSE.logClient = function (data)      { log(this, data, 'client') }
+MOOSSE.logServer = function (data, evt) { log(this, data, 'server', evt) }
+function log ($log, raw, source, evt='') {
+
+    //// Deal with `raw` if it’s a string - often an unparsed JSON string.
+    if ('string' === typeof raw) // eg 'Hi', '99', '{"nope":0}' or '{"ok":"!"}'
+        try {
+            raw = JSON.parse(raw) // eg '99', '{"nope":0}' or '{"ok":"!"}'
+        } catch (e) {
+            raw = { ok:'(string data): ' + sanitize(raw) } } // eg 'Hi'
+
+    //// Whatever has been passed to `raw`, convert it to a conformant plain
+    //// object. That is, an object with either an 'ok' or an 'error' property.
+    let data
+    if ('object' !== typeof raw) // eg 'number' or 'boolean' (but not 'string')
+        data = { ok:'(' + (typeof raw) + ' data): ' + sanitize(raw) }
+    else // convert to a conformant object if not already, eg `{ok:'!'}`
+        if (null != raw.ok || null != raw.error) // comformant, eg `{ok:'!'}`
+            data = Object.assign({}, raw) // keep other properties
+        else if (null == raw.ok && null != raw.message) // eg an error object
+            data = Object.assign({ error:raw.message }, raw)
+        else // some arbitrary object, eg `{nope:0}`
+            data = { ok:'(object data): ' + sanitize( JSON.stringify(raw) ) }
+
+    //// Add the log-line DIV to `$log.lines` and render the $log.
+    const label = data.error ? 'error' : 'ok'
+    const msg   = sanitize(data.error || data.ok)
+    $log.lines.unshift(
+        '<div class="' + label + ' ' + source + (evt?' '+evt:'') + '">'
+      + ('    ' + ++$log.lineTally).slice(-4) // line number
+      + ' ' + msg + '</div>' )
+    $log.lines = $log.lines.slice(0,10)
+    $log.innerHTML = ''
+      // + 'Tries since modification: ' + triesSinceModification + '<br><br>\n'
+      // + (null == numResults ? '' : 'Try ' + getTypes() + ' at ' + tryInfo() + '<br><br><br>\n')
+      + $log.lines.join('\n')
+
+}//log()
+
+
+//// Makes arbitrary text suitable for writing to the log.
+function sanitize (text) {
+    text = ''+text
+    if (80 < text.length) text = text.slice(0,80) + '...'
+    text = text.replace(/</g, '&lt;')
+    text = text.replace(/\n/g, '\\n')
+    return text
+}
+
+
+//// Create admin sample buttons.
+MOOSSE.addSampleButton = function (actions, method, config) {
+    for (let action in actions) {
+        const
+            $sample = document.createElement('A')
+          , tip     = actions[action].tip || ''
+          , eg      = actions[action].eg  || ''
+          , sample  = { method, action
+              , filter: (eg.match(/([-a-z0-9]+)$/)||[])[1] //@TODO better parser
+              , body:   (eg.match(/BODY {(.+)}/)||[])[1]   //@TODO better parser
+            }
+        sample.filter = sample.filter === action ? '' : sample.filter
+        sample.body = sample.body ? '{'+sample.body+'}' : ''
+        $sample.innerHTML = '/' + action + (sample.filter?'/'+sample.filter:'')
+        $sample.title = tip
+        $sample.addEventListener('click', evt => {
+            ['method','action','filter','body'].forEach( name => {
+                const $el = config['$'+name]
+                $el.value = sample[name] || ''
+                document.cookie = $el.id + '=' + sample[name]
+                MOOSSE.updateValidityHilite($el)
+            })
+            if (evt.altKey) setTimeout( () => MOOSSE.send(config), 1)
+        })
+        config.$samples.appendChild($sample)
+    }
+}//addSampleButton()
+
+
+//// Changes an empty INPUT to blue, valid to green, or invalid to red.
+//// Also, update wording of the ‘Begin * SSE Session’ button.
+MOOSSE.updateValidityHilite = function ($el) {
+
+    //// Get `usertype` and `name` from the INPUT’s ID.
+    const
+        parts = $el.id.split('-')
+      , name = parts.pop() // eg 'filter' or 'apiv'
+      , usertype = parts[0] // eg 'admin', 'enduser' (or undefined if apiv)
+    if (usertype && ! /^admin$|^enduser$/.test(usertype) )
+        throw Error(`usertype '${usertype}' invalid`)
+
+    //// Set the INPUT’s class depending on its validity.
+    if ('filter' === name) {
+        //@TODO combine MOOSSE.valid.filters
+    } else {
+        $el.className = $el.value ? MOOSSE.valid[name].test($el.value.trim())
+          ? 'valid' : 'invalid' : '' // green, red or blue
+    }
+
+    //// Show a message after the '#domain' INPUT.
+    if ('domain' === $el.id) {
+        const $comment = document.querySelector('#domain-comment')
+        if (! $el.value)
+            $comment.innerHTML = ''
+        else if (! MOOSSE.valid.domain.test($el.value) )
+            $comment.innerHTML = 'Error: invalid domain'
+        else if ( MOOSSE.valid.local.test($el.value) )
+            $comment.innerHTML = 'https' === $el.value.slice(0,5)
+              ? '(local SSL server)' : '(local servers don’t have to use https)'
+        else
+            $comment.innerHTML = 'https' === $el.value.slice(0,5)
+              ? '(remote SSL server)' : 'Error: Remote servers must use https'
+        $el.className = 'Error: ' === $comment.innerHTML.slice(0,7)
+          ? 'invalid' : $el.value ? 'valid' : ''
+    }
+
+    //// Update wording of the ‘Begin * SSE Session’ button.
+    if (usertype) {
+        const
+            $user  = document.querySelector('#'+usertype+'-user')
+          , $pass  = document.querySelector('#'+usertype+'-pass')
+          , $begin = document.querySelector('#'+usertype+'-begin')
+        $begin.innerHTML = 'Begin '
+          + ( $user.value.trim() || $pass.value.trim() ? 'Admin' : 'Enduser')
+          + ' SSE Session'
+    }
+
+}//updateValidityHilite()
+
+
+//// Sends a request to a URL and logs the result.
+MOOSSE.send = function (config) {
+
+    //// Use the `config` object to retrieve variables.
+    const { $apiv, $domain, $method, $user, $pass, $action, $filter, $body, logClient, logServer } = config
+    let apiv     =   $apiv.value.trim()
+      , domain   = $domain.value.trim()
+      , method   = $method.value.trim()
+      , action   = $action.value.trim()
+      , filter   = $filter.value.trim()
+      , body     =   $body.value.trim() || null
+      , bodyLog  = body ? sanitize(body) + ' to ' : ''
+      , user     =   $user.value.trim()
+      , pass     =   $pass.value.trim()
+      , creds    = user||pass ? user + ':' + pass + '/' : ''
+      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
+    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+    apiv   = apiv   ? apiv   + '/' : '' // append a slash if `apiv` has been set
+    action = action ? action + '/' : filter ? '[action]/' : '' // don’t allow a blank ‘action’ if a ‘filter’ is specified
+    filter = filter ? filter + '/' : '' // allow a blank ‘filter’
+
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/notify'.
+    const url    = (domain + apiv + creds    + action + filter).slice(0,-1)
+    const urlLog = (domain + apiv + credsLog + action + filter).slice(0,-1)
+
+    const init = 'GET' === method
+      ? {   method                     // *GET, POST, PUT, DELETE, etc.
+          , cache:       'no-cache'    // *default, no-cache, reload, force-c...
+          , mode:        'cors'        // *same-origin, no-cors, cors
+          , redirect:    'error'       // *manual, follow, error
+          , referrerPolicy:    'no-referrer' // *client, no-referrer
+        }
+      : {   method                     // *GET, POST, PUT, DELETE, etc.
+          , cache:       'no-cache'    // *default, no-cache, reload, force-c...
+          , mode:        'cors'        // *same-origin, no-cors, cors
+          , redirect:    'error'       // *manual, follow, error
+          , referrerPolicy:    'no-referrer' // *client, no-referrer
+          , credentials: 'omit'        // *omit, include, same-origin @TODO omit?
+          , body                       // must match 'Content-Type' header
+          , headers: {
+                'Content-Type':'application/json'
+            }
+        }
+
+    //// Log that `send()` has been called. @TODO log invalidation errors too
+    logClient({ok:`send() will ${method} ${bodyLog}${urlLog}`})
+
+    //// Use the Fetch API to make the request.
+    fetch(url, init)
+       .then( res => res.text() ) // parse response to JSON
+       .then( text => logServer(text) )
+       .catch(text => logServer(text) )
+
+}//send()
+
+
+//// Starts an SSE (Server-Sent Events) connection.
+MOOSSE.begin = function (config) {
+
+    //// Use the `config` object to retrieve variables.
+    const { $apiv, $domain, $user, $pass, $begin, $end, logClient, logServer, usertype } = config
+    let apiv     =   $apiv.value.trim()
+      , domain   = $domain.value.trim()
+      , user     =   $user.value.trim()
+      , pass     =   $pass.value.trim()
+      , creds    = user||pass ? user + ':' + pass + '/' : ''
+      , credsLog = user||pass ? user + ':' + '•'.repeat(pass.length) + '/' : ''
+    domain += /\/$/.test(domain) ? '' : '/' // append a slash, if missing
+    apiv = apiv ? apiv + '/' : '' // append a slash if `apiv` has been set
+
+    //// Build the URL, eg 'http://localhost:1234/jo:pw/begin/vvv'
+    const filter = 'admin' === usertype ? 'vvv' : 'foo-bar,baz'
+    const url    = domain + apiv + creds    + 'begin/' + filter
+    const urlLog = domain + apiv + credsLog + 'begin/' + filter
+
+    //// Log that `begin()` has been called.
+    if ('admin' !== usertype && 'enduser' !== usertype)
+        return logClient({ error:'Can’t begin: `usertype` invalid' })
+    if (config.es)
+        return logClient({ error:'Can’t begin: EventSource already connected' })
+    if (! window.EventSource)
+        return logClient({ error:'Can’t begin: EventSource not supported' })
+    logClient({ ok:`begin() will connect to ${urlLog}` })
+
+    //// Update the buttons.
+    $begin.className = 'hid'
+    $end.className = ''
+
+    const es = config.es = new EventSource(url)
+    es.addEventListener('message', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'message')
+    }, false)
+
+    es.addEventListener('open', evt =>
+        logClient({ ok:'Connection was opened' }), false)
+
+    es.addEventListener('error', evt => {
+        evt = evt.originalTarget || evt // prefer the original error event
+        if (EventSource.CONNECTING === evt.readyState)
+            end(config, 'of an SSE error (readyState is CONNECTING)')
+        else if (EventSource.OPEN === evt.readyState)
+            end(config, 'of an SSE error (readyState is OPEN)')
+        else if (EventSource.CLOSED === evt.readyState)
+            end(config, 'of an SSE error (readyState is CLOSED)')
+        else if (null != evt.readyState)
+            logClient({ error:'Unexpected readyState ' + evt.readyState }) // should not be possible?
+        else
+            logClient({ error:'No evt.readyState: ' + JSON.stringify(evt) })
+    }, false)
+
+    //// Custom events.
+    es.addEventListener('end', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'end')
+        if ('soft-end' === data.type)
+            end(config, "of 'soft-end' event")
+    }, false)
+
+    es.addEventListener('log', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'log')
+    }, false)
+
+    es.addEventListener('bread', evt => {
+        let data
+        try { data = JSON.parse(evt.data)
+        } catch (err) {
+            return logClient({ error:'JSON: ' + err.message })
+        }
+        if (! data) throw Error('No data!') //@TODO handle better - maybe disconnect?
+        logServer(data, 'bread')
+    }, false)
+
+}//begin()
+
+
+//// Closes an SSE (Server-Sent Events) connection.
+function end (config, reason="the ‘End’ button was clicked") {
+
+    //// Log that `end()` has been called.
+    config.logClient({ ok:'Closing SSE session because ' + reason })
+    if (! config.es)
+        return config.logClient({error:'Can’t end: EventSource not connected'})
+
+    //// Close the connection and make `es` falsey.
+    config.es.close()
+    config.es = null
+
+    //// Update the buttons.
+    config.$begin.className = ''
+    config.$end.className = 'hid'
+}
+MOOSSE.end = end
+
+
+}(this)</script>
+
+
+
+
+<!-- The API version and domain, used by the Admin Client and Enduser Client -->
+<input id="apiv" placeholder="v?"></input>
+<input id="domain" placeholder="domain"></input>
+<span id="domain-comment"></span>
+
+
+
+
+<!-- Admin Client -->
+<hr>
+<div id="admin-samples" class="samples">
+  <button id="admin-begin">Begin Admin SSE Session</button>
+  <button id="admin-end" class="hid">End SSE Session</button>
+</div>
+<div class="table">
+  <input  id="admin-method" placeholder="method"></input><input
+          id="admin-user"   placeholder="username"></input><input
+          id="admin-pass"   placeholder="password"></input><input
+          id="admin-action" placeholder="action"></input><input
+          id="admin-filter" placeholder="filter"></input>
+</div>
+<div class="table">
+  <input  id="admin-body"   placeholder="body"></input><button
+          id="admin-send">Send</button>
+</div>
+<pre id="admin-log">Loading...</pre>
+<script>!function(ROOT){
+const MOOSSE = ROOT.MOOSSE
+
+//// Initialise the admin config and EventSource object.
+const config = {
+    usertype: 'admin'
+  , es: null
+}
+
+//// Add config’s references to the various admin input fields and buttons.
+config.$apiv   = document.querySelector('#apiv')
+config.$domain = document.querySelector('#domain')
+'begin,end,samples,method,user,pass,action,filter,body,send,log'
+   .split(',')
+   .forEach(name => config['$'+name] = document.querySelector('#admin-'+name))
+const { $send, $begin, $end, $samples, $log } = config
+
+//// Set up admin logging.
+config.logClient = MOOSSE.logClient.bind($log)
+config.logServer = MOOSSE.logServer.bind($log)
+$log.lineTally = 0
+$log.lines = Array(10).fill('<div>&nbsp;</div>')
+
+//// Log a ready message.
+config.logClient({ ok:'Ready to send' })
+
+//// Set up admin buttons.
+$send.addEventListener( 'click', evt => MOOSSE.send(config) )
+$begin.addEventListener( 'click', evt => MOOSSE.begin(config) )
+$end.addEventListener( 'click', evt => MOOSSE.end(config) )
+
+//// Create admin sample buttons.
+MOOSSE.addSampleButton(MOOSSE.api.admin.GET, 'GET', config)
+MOOSSE.addSampleButton(MOOSSE.api.admin.POST, 'POST', config)
+
+}(this)</script>
+
+
+
+
+<!-- Enduser Client -->
+<hr>
+<div id="enduser-samples" class="samples">
+  <button id="enduser-begin">Begin Enduser SSE Session</button>
+  <button id="enduser-end" class="hid">End SSE Session</button>
+</div>
+<div class="table">
+  <input  id="enduser-method" placeholder="method"></input><input
+          id="enduser-user"   placeholder="username"></input><input
+          id="enduser-pass"   placeholder="password"></input><input
+          id="enduser-action" placeholder="action"></input><input
+          id="enduser-filter" placeholder="filter"></input>
+</div>
+<div class="table">
+  <input  id="enduser-body"   placeholder="body"></input><button
+          id="enduser-send">Send</button>
+</div>
+<pre id="enduser-log">Loading...</pre>
+<script>!function(ROOT){
+const MOOSSE = ROOT.MOOSSE
+
+
+//// Initialise the enduser config and EventSource object.
+const config = {
+    usertype: 'enduser'
+  , es: null
+}
+
+//// Add config’s references to the various admin input fields and buttons.
+config.$apiv   = document.querySelector('#apiv')
+config.$domain = document.querySelector('#domain')
+'begin,end,samples,method,user,pass,action,filter,body,send,log'
+   .split(',')
+   .forEach(name => config['$'+name] = document.querySelector('#enduser-'+name))
+const { $send, $begin, $end, $samples, $log } = config
+
+//// Set up enduser logging.
+config.logClient = MOOSSE.logClient.bind($log)
+config.logServer = MOOSSE.logServer.bind($log)
+$log.lineTally = 0
+$log.lines = Array(10).fill('<div>&nbsp;</div>')
+
+//// Log a ready message.
+config.logClient({ ok:'Ready to connect' })
+
+//// Set up enduser buttons.
+$send.addEventListener( 'click', evt => MOOSSE.send(config) )
+$begin.addEventListener( 'click', evt => MOOSSE.begin(config) )
+$end.addEventListener( 'click', evt => MOOSSE.end(config) )
+
+//// Create enduser sample buttons.
+MOOSSE.addSampleButton(MOOSSE.api.enduser.GET, 'GET', config)
+MOOSSE.addSampleButton(MOOSSE.api.enduser.POST, 'POST', config)
+
+}(this)</script>
+
+
+
+
+<!-- 1. Persist INPUT values after refresh (Firefox does this automatically) -->
+<!-- 2. Highlight inputs blue, green or red depending on their validity -->
+<!-- 3. Provide defaults for the API version and domain -->
+<script>!function(ROOT){
+    const $$inputs = document.querySelectorAll('input')
+
+    //// Restore INPUT values to their previous values, if any.
+    //// Also, highlight inputs blue, green or red depending on their validity.
+    prevVals = {}
+    document.cookie.split(';').forEach( keyval => {
+        [ key, val ] = keyval.trim().split('=')
+        prevVals[key] = val
+    })
+    $$inputs.forEach( $el => {
+        $el.value = prevVals[$el.id] || ''
+        MOOSSE.updateValidityHilite($el)
+    })
+
+    //// Update cookies and validity-highlight every time an input changes.
+    $$inputs.forEach( $el => $el.addEventListener('input',
+        evt => {
+            document.cookie = $el.id + '=' + $el.value
+            MOOSSE.updateValidityHilite($el)
+        }
+    ) )
+
+    //// Provide defaults for the API version and domain.
+    const
+        $apiv         = document.querySelector('#apiv')
+      , $domain       = document.querySelector('#domain')
+      , matchDomainRx = /^https?:\/\/[-:.a-z0-9]+/
+      , pgDomain      = ( location.href.match(matchDomainRx) || [])[0]
+    $apiv.value   = $apiv.value || MOOSSE.configuration.APIV
+    $domain.value = ROOT.MOOSSE.valid.domain.test($domain.value) ? $domain.value
+      : (ROOT.MOOSSE.valid.local.test(pgDomain) ? pgDomain
+      : ROOT.MOOSSE.configuration.remoteURL)
+    MOOSSE.updateValidityHilite($apiv)
+    MOOSSE.updateValidityHilite($domain)
+
+}(this)</script>
+
+
+
+
+</div><!--.container -->
+</body>
+</html>

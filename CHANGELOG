@@ -23,5 +23,7 @@
 0.2.2 Fairly complete tests, covering all API codes
 0.2.3 POST ‘/v0/<creds>/test’ responds with test results
 0.2.4 test.js checks that all codes used in oompsh.js have tests
-0.3.0 test.js checks that all codes used in oompsh-config.js have tests
+0.2.5 test.js checks that all codes used in oompsh-config.js have tests
 0.3.0 ‘/v0/begin/foo-bar,baz’ subscribes to ‘/v0/<creds>/add/baz’ etc
+0.3.1 Renamed ‘Moosse’
+0.3.2 Icons, logo, style; demo in ‘support/demo.html’

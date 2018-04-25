@@ -1,10 +1,10 @@
-//// config-builder.js //// 0.3.0 //// Converts README.md to *-config.js ///////
+//// config-builder.js //// 0.3.2 //// Converts README.md to *-config.js ///////
 
 !function(){
 
 //// Validate the environment. Should have called:
 //// `$ node test.js` ...for standalone mode, or:
-//// `$ node oompsh.js` ...to fulfil ‘/v0/usr:pwd/test’ requests
+//// `$ node moosse.js` ...to fulfil ‘/v0/usr:pwd/test’ requests
 if ('object' !== typeof module) return console.error(`Must run in Node.js`)
 
 //// Export a function which runs the tests, useful if NOT standalone mode.
@@ -15,8 +15,8 @@ module.exports = (cb) => {
     if (tests[currTest]) tests[currTest++](currTest); else finish()
 }
 
-//// Load the OOMPSH namespace, with configuration, API and validators.
-require('./oompsh-config.js')
+//// Load the MOOSSE namespace, with configuration, API and validators.
+require('./moosse-config.js')
 
 ////
 let callback
@@ -26,7 +26,7 @@ let callback
 const
 
     //// Determine whether ‘test.js’ has been called directly (we’ll need to
-    //// spawn a server), or included by a running ‘oompsh.js’ server (and
+    //// spawn a server), or included by a running ‘moosse.js’ server (and
     //// used to fulfil a ‘/v0/usr:pwd/test’ request).
     standaloneMode = '/test.js' === process.argv[1].slice(-8)
 
@@ -37,10 +37,10 @@ const
 */
 
     ////
-  , OOMPSH = global.OOMPSH
+  , MOOSSE = global.MOOSSE
   , VERSION = require('./package.json').version
   , creds = Object.keys( getAdminCredentials() )[0]
-  , { apiURL, validatorsURL } = OOMPSH.configuration
+  , { apiURL, validatorsURL } = MOOSSE.configuration
 
     //// Import library functionality.
   , { spawn } = require('child_process')
@@ -51,8 +51,8 @@ const
   , eq = (actual, expected, desc) => {
         captureDesc(desc); deepEqual(actual, expected, desc) }
 
-    //// Start an Oompsh server (standalone mode only).
-  , server = standaloneMode ? spawn('node', ['oompsh.js']) : {
+    //// Start an Moosse server (standalone mode only).
+  , server = standaloneMode ? spawn('node', ['moosse.js']) : {
         port: process.env.PORT || 3000 // Heroku sets $PORT
       , on: (evt, fn) => {
             //...
@@ -76,7 +76,7 @@ const
         //// 9000-9999: Errors.
 
 
-        //// 9000-9099: Oompsh startup errors.
+        //// 9000-9099: Moosse startup errors.
         //// @TODO
 
 
@@ -241,7 +241,7 @@ const
         , status:406, code:9530 }
         , ct+`. POST '/v0/<creds>/notify/all' with message '' should error (406/9530)`) )
       , ct => test_JSON('POST', `/v0/${creds}/notify/all`
-        , { message:'x'.repeat(OOMPSH.configuration.maxMessageLength + 1) }, j => eq(j,
+        , { message:'x'.repeat(MOOSSE.configuration.maxMessageLength + 1) }, j => eq(j,
         { error: `NOT ACCEPTABLE: Invalid body, see notifyBody, ` + validatorsURL
         , status:406, code:9530 }
         , ct+`. POST '/v0/<creds>/notify/all' with too-long message should error (406/9530)`) )
@@ -277,16 +277,16 @@ const
 
         //// Homepage.
       , ct => test_plain_GET('/', d => is(
-        0 < d.indexOf('<title>Oompsh ' + VERSION)
+        0 < d.indexOf('<title>Moosse ' + VERSION)
         , ct+`. GET '/' should retrieve the homepage`) )
       , ct => test_plain_GET('/index.html', d => is(
-        0 < d.indexOf('<title>Oompsh ' + VERSION)
+        0 < d.indexOf('<title>Moosse ' + VERSION)
         , ct+`. GET '/index.html' should retrieve the homepage`) )
 
-        //// Oompsh Config.
-      , ct => test_plain_GET('/oompsh-config.js', d => is(
-        0 < d.indexOf('oompsh-config.js //// ' + VERSION)
-        , ct+`. GET '/oompsh-config.js' should retrieve Oompsh config`) )
+        //// Moosse Config.
+      , ct => test_plain_GET('/moosse-config.js', d => is(
+        0 < d.indexOf('moosse-config.js //// ' + VERSION)
+        , ct+`. GET '/moosse-config.js' should retrieve Moosse config`) )
 
 
 
@@ -299,16 +299,16 @@ const
 
         //// 6000-6099: API, configuration etc.
       , ct => test_JSON('GET', '/v0', j => eq(j,
-        OOMPSH.api // code 6000
-        , ct+`. GET '/v0' should retrieve the Oompsh API (200/6000)`) )
+        MOOSSE.api // code 6000
+        , ct+`. GET '/v0' should retrieve the Moosse API (200/6000)`) )
 
         //// 6100-6199: Version.
       , ct => test_JSON('GET', '/v0/version', j => eq(j,
-        { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
-        , ct+`. GET '/v0/version' should retrieve the Oompsh version (200/6100)`) )
+        { ok: 'Moosse ' + VERSION, status:200, code:6100 }
+        , ct+`. GET '/v0/version' should retrieve the Moosse version (200/6100)`) )
       , ct => test_JSON('GET', `/v0/${creds}/version`, j => eq(j,
-        { ok: 'Oompsh ' + VERSION, status:200, code:6100 }
-        , ct+`. GET '/v0/<creds>/version' should retrieve the Oompsh version (200/6100)`) )
+        { ok: 'Moosse ' + VERSION, status:200, code:6100 }
+        , ct+`. GET '/v0/<creds>/version' should retrieve the Moosse version (200/6100)`) )
 
         //// 6200-6899: @TODO
 
@@ -340,7 +340,7 @@ const
 
         //// 7030: Notify.
       , ct => test_JSON('POST', `/v0/${creds}/notify/enduser`,
-        { message:'x'.repeat(OOMPSH.configuration.maxMessageLength) }, j => compare(j,
+        { message:'x'.repeat(MOOSSE.configuration.maxMessageLength) }, j => compare(j,
         { ok: /Notified \d+ admin\(s\), \d+ enduser\(s\)/
         , status:200, code:7030 }
         , ct+`. POST '/v0/<creds>/notify/enduser' should respond ok (200/7030)`) )
@@ -352,14 +352,14 @@ const
 
         //// 7040: Add.
       , ct => test_JSON('POST', `/v0/${creds}/add/_foo-cpt--2_4`,
-        { id:123, title:'x'.repeat(OOMPSH.configuration.maxTitleLength) }, j => compare(j,
+        { id:123, title:'x'.repeat(MOOSSE.configuration.maxTitleLength) }, j => compare(j,
         { ok: /'add' sent to \d+ '_foo-cpt--2_4' enduser\(s\)/
         , status:200, code:7040 }
         , ct+`. POST '/v0/<creds>/add/_foo-cpt--2_4' should respond ok (200/7040)`) )
 
         //// 7050: Edit.
       , ct => test_JSON('POST', `/v0/${creds}/edit/_foo-cpt--2_4`,
-        { id:123, title:'x'.repeat(OOMPSH.configuration.maxTitleLength) }, j => compare(j,
+        { id:123, title:'x'.repeat(MOOSSE.configuration.maxTitleLength) }, j => compare(j,
         { ok: /'edit' sent to \d+ '_foo-cpt--2_4' enduser\(s\)/
         , status:200, code:7050 }
         , ct+`. POST '/v0/<creds>/edit/_foo-cpt--2_4' should respond ok (200/7050)`) )
@@ -387,13 +387,13 @@ const
           , filter: 'foo-bar,baz'
           , group: 'all'
           , ok: 'Enduser SSE session is open'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/
           , usertype: 'enduser' }
         , ct+". First enduser-data should confirm SSE session has begun (200/8000)" ) )
 
         //// 8010: Soft-End.
-        //// Receives 'soft-end/enduser', '.../all', '.../<oompshID>', not '.../admin'.
+        //// Receives 'soft-end/enduser', '.../all', '.../<moosseID>', not '.../admin'.
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/soft-end/enduser`], j => eq(
           j[1].event, 'end'
         , ct+". 'soft-end/enduser' enduser SSE event should be 'end'" ) )
@@ -406,15 +406,15 @@ const
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/soft-end/all`], j => eq(
           'An admin POSTed a soft-end instruction', j[1].data.ok
         , ct+". 'soft-end/all' enduser data should contain expected 'ok' value (SSE/8010)" ) )
-      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/soft-end/<oompshID>`], j => eq(
+      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/soft-end/<moosseID>`], j => eq(
           'An admin POSTed a soft-end instruction', j[1].data.ok
-        , ct+". 'soft-end/<oompshID>' enduser data should contain expected 'ok' value (SSE/8010)" ) )
+        , ct+". 'soft-end/<moosseID>' enduser data should contain expected 'ok' value (SSE/8010)" ) )
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/soft-end/admin`], j => eq(
           undefined, j[1]
         , ct+". 'soft-end/admin' should not be received by an enduser" ) )
 
         //// 8020: Hard-End.
-        //// Receives 'hard-end/enduser', '.../all', '.../<oompshID>', not '.../admin'.
+        //// Receives 'hard-end/enduser', '.../all', '.../<moosseID>', not '.../admin'.
         //// This is directly before being disconnected.
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/hard-end/enduser`], j => eq(
           j[1].event, 'end'
@@ -428,15 +428,15 @@ const
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/hard-end/all`], j => eq(
           'An admin POSTed a hard-end instruction', j[1].data.ok
         , ct+". 'hard-end/all' enduser data should contain expected 'ok' value (SSE/8020)" ) )
-      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/hard-end/<oompshID>`], j => eq(
+      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/hard-end/<moosseID>`], j => eq(
           'An admin POSTed a hard-end instruction', j[1].data.ok
-        , ct+". 'hard-end/<oompshID>' enduser data should contain expected 'ok' value (SSE/8020)" ) )
+        , ct+". 'hard-end/<moosseID>' enduser data should contain expected 'ok' value (SSE/8020)" ) )
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/hard-end/admin`], j => eq(
           undefined, j[1]
         , ct+". 'hard-end/admin' should not be received by an enduser" ) )
 
         //// 8030: Notify.
-        //// Receives 'notify/enduser', '.../all', '.../<oompshID>', not '.../admin'.
+        //// Receives 'notify/enduser', '.../all', '.../<moosseID>', not '.../admin'.
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/notify/enduser`, { message:'Hi!' }], j => eq(
           j[1].event, 'message'
         , ct+". 'notify/enduser' enduser SSE event should be 'message'" ) )
@@ -451,10 +451,10 @@ const
           , { message:'Message to all' }], j => eq(
           'Message to all', j[1].data.ok
         , ct+". 'notify/all' enduser data should contain expected 'ok' value" ) )
-      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/notify/<oompshID>`
-          , { message:'Message to just one oompshID' }], j => eq(
-          'Message to just one oompshID', j[1].data.ok
-        , ct+". 'notify/<oompshID>' enduser data should contain expected 'ok' value" ) )
+      , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/notify/<moosseID>`
+          , { message:'Message to just one moosseID' }], j => eq(
+          'Message to just one moosseID', j[1].data.ok
+        , ct+". 'notify/<moosseID>' enduser data should contain expected 'ok' value" ) )
       , ct => test_SSE(1, '/v0/begin', [`/v0/${creds}/notify/admin`
           , { message:'Message to admins' }], j => eq(
           undefined, j[1]
@@ -473,7 +473,7 @@ const
           , filter: 'vvv'
           , group: 'all'
           , ok: 'Admin SSE session is open'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/
           , usertype: 'admin' }
         , ct+". First admin-data should confirm SSE session has begun (200/8000)" ) )
@@ -484,13 +484,13 @@ const
       , ct => test_SSE(1, `/v0/${creds}/begin`, [], j => compare(j[1].data, {
             code: 8500
           , ok: 'An admin SSE session opened'
-          , oompshID: j[0].data.oompshID
+          , moosseID: j[0].data.moosseID
           , sentAt: /^\d{13}$/
           , type: 'begin' }
         , ct+". Second admin-data should log its own SSE-begin (SSE/8500)" ) )
 
         //// 8010: Soft-End.
-        //// Receives 'soft-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
+        //// Receives 'soft-end/admin', '.../all', '.../<moosseID>', not '.../enduser'.
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/soft-end/admin`], j => eq(
           j[2].event, 'end'
         , ct+". 'soft-end/admin' admin SSE event should be 'end'" ) )
@@ -503,15 +503,15 @@ const
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/soft-end/all`], j => eq(
           'An admin POSTed a soft-end instruction', j[2].data.ok
         , ct+". 'soft-end/all' admin data should contain expected 'ok' value (SSE/8010)" ) )
-      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/soft-end/<oompshID>`], j => eq(
+      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/soft-end/<moosseID>`], j => eq(
           'An admin POSTed a soft-end instruction', j[2].data.ok
-        , ct+". 'soft-end/<oompshID>' admin data should contain expected 'ok' value (SSE/8010)" ) )
+        , ct+". 'soft-end/<moosseID>' admin data should contain expected 'ok' value (SSE/8010)" ) )
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/soft-end/enduser`], j => eq(
           undefined, j[2]
         , ct+". 'soft-end/enduser' should not be received by an admin" ) )
 
         //// 8020: Hard-End.
-        //// Receives 'hard-end/admin', '.../all', '.../<oompshID>', not '.../enduser'.
+        //// Receives 'hard-end/admin', '.../all', '.../<moosseID>', not '.../enduser'.
         //// This is directly before being disconnected.
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/hard-end/admin`], j => eq(
           j[2].event, 'end'
@@ -525,9 +525,9 @@ const
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/hard-end/all`], j => eq(
           'An admin POSTed a hard-end instruction', j[2].data.ok
         , ct+". 'hard-end/all' admin data should contain expected 'ok' value (SSE/8020)" ) )
-      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/hard-end/<oompshID>`], j => eq(
+      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/hard-end/<moosseID>`], j => eq(
           'An admin POSTed a hard-end instruction', j[2].data.ok
-        , ct+". 'hard-end/<oompshID>' admin data should contain expected 'ok' value (SSE/8020)" ) )
+        , ct+". 'hard-end/<moosseID>' admin data should contain expected 'ok' value (SSE/8020)" ) )
       , ct => test_SSE(3, `/v0/${creds}/begin`, [`/v0/${creds}/hard-end/enduser`], j => eq(
           undefined, j[3]
         , ct+". 'hard-end/admin' should not be received by an admin" ) )
@@ -546,7 +546,7 @@ const
         //@TODO why does admin not see the enduser begin log?
 
         //// 8030: Notify.
-        //// Receives 'notify/admin', '.../all', '.../<oompshID>', not '.../enduser'.
+        //// Receives 'notify/admin', '.../all', '.../<moosseID>', not '.../enduser'.
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/notify/admin`, { message:'Hi!' }], j => eq(
           j[2].event, 'message'
         , ct+". 'notify/admin' admin SSE event should be 'message'" ) )
@@ -561,10 +561,10 @@ const
           , { message:'Message to all' }], j => eq(
           'Message to all', j[2].data.ok
         , ct+". 'notify/all' admin data should contain expected 'ok' value" ) )
-      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/notify/<oompshID>`
-          , { message:'Message to just one oompshID' }], j => eq(
-          'Message to just one oompshID', j[2].data.ok
-        , ct+". 'notify/<oompshID>' admin data should contain expected 'ok' value" ) )
+      , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/notify/<moosseID>`
+          , { message:'Message to just one moosseID' }], j => eq(
+          'Message to just one moosseID', j[2].data.ok
+        , ct+". 'notify/<moosseID>' admin data should contain expected 'ok' value" ) )
       , ct => test_SSE(2, `/v0/${creds}/begin`, [`/v0/${creds}/notify/enduser`
           , { message:'Message to endusers' }], j => eq(
           undefined, j[2]
@@ -582,7 +582,7 @@ const
             type: 'begin'
           , code: 8500
           , ok: 'An enduser SSE session opened'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/ }
         , ct+". Admins should log that enduser SSE sessions begin (SSE/8500)" ) )
 
@@ -593,33 +593,33 @@ const
             type: 'onSSEClientClose'
           , code: 8510
           , ok: 'An enduser SSE session closed'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/ }
         , ct+". Admins should log that enduser SSE sessions end (SSE/8510)" ) )
 
       , ct => test_SSE(3, `/v0/${creds}/begin`, [0,0,'/v0/begin'], j => eq(
-          j[2].data.oompshID, j[3].data.oompshID
-        , ct+". Admins should log enduser oompshIDs consistently" ) )
+          j[2].data.moosseID, j[3].data.moosseID
+        , ct+". Admins should log enduser moosseIDs consistently" ) )
 
         //// 8500: Admin logs that a second admin SSE session opens and closes.
       , ct => test_SSE(2, `/v0/${creds}/begin`, [0,0,`/v0/${creds}/begin`], j => compare(j[2].data, {
             type: 'begin'
           , code: 8500
           , ok: 'An admin SSE session opened'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/ }
         , ct+". Admins should log that admin SSE sessions begin (SSE/8500)" ) )
       , ct => test_SSE(3, `/v0/${creds}/begin`, [0,0,`/v0/${creds}/begin`], j => compare(j[3].data, {
             type: 'onSSEClientClose'
           , code: 8510
           , ok: 'An admin SSE session closed'
-          , oompshID: OOMPSH.valid.oompshID
+          , moosseID: MOOSSE.valid.moosseID
           , sentAt: /^\d{13}$/ }
         , ct+". Admins should log that admin SSE sessions end (SSE/8510)" ) )
 
       , ct => test_SSE(3, `/v0/${creds}/begin`, [0,0,`/v0/${creds}/begin`], j => eq(
-          j[2].data.oompshID, j[3].data.oompshID
-        , ct+". Admins should log admin oompshIDs consistently" ) )
+          j[2].data.moosseID, j[3].data.moosseID
+        , ct+". Admins should log admin moosseIDs consistently" ) )
 
 
         //// BREAD SSE
@@ -705,7 +705,7 @@ server.stdout.on('data', data => {
 
     //// When the server outputs its startup message, begin the tests.
     if (! server.port) {
-        const match = (data+'').match(/^\W*Oompsh is listening on port (\d+)\W*$/)
+        const match = (data+'').match(/^\W*Moosse is listening on port (\d+)\W*$/)
         if (match) {
             server.port = match[1]
             if (tests[currTest]) tests[currTest++](currTest); else finish()
@@ -721,14 +721,14 @@ server.stdout.on('data', data => {
 ////
 function getAdminCredentials () {
     const out = {}
-    let errs = [], envCreds = process.env.OOMPSH_ADMIN_CREDENTIALS
+    let errs = [], envCreds = process.env.MOOSSE_ADMIN_CREDENTIALS
     if (! envCreds)
-        throw Error('Try `$ export OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
+        throw Error('Try `$ export MOOSSE_ADMIN_CREDENTIALS=jo:pw,sam:pass`')
     envCreds = envCreds.split(',')
     envCreds.forEach( (ec, i) => {
-        if (! OOMPSH.valid.creds.test(ec) ) errs.push(i); else out[ec] = 1 } )
+        if (! MOOSSE.valid.creds.test(ec) ) errs.push(i); else out[ec] = 1 } )
     if (errs.length)
-        throw Error('Invalid OOMPSH_ADMIN_CREDENTIALS at index ' + errs)
+        throw Error('Invalid MOOSSE_ADMIN_CREDENTIALS at index ' + errs)
     return out
 }
 
@@ -755,9 +755,9 @@ function finish () {
             out += `\nCode ${code} has status inconsistencies`
     }
 
-    //// Check that all codes in oompsh.js have tests.
-    const oompshSrc = ( require('fs').readFileSync('oompsh.js')+'' ).split('\n')
-    oompshSrc.forEach( (line, num) => {
+    //// Check that all codes in moosse.js have tests.
+    const moosseSrc = ( require('fs').readFileSync('moosse.js')+'' ).split('\n')
+    moosseSrc.forEach( (line, num) => {
         const // eg 'error(res, 9210, 401, ' or 'ok(res, 6100, 200, '
             match = line.match(/(error|ok)\(res,\s*(\d{4}),\s*(\d{3}),\s*/) || []
           , okOrError = match[1]
@@ -765,62 +765,62 @@ function finish () {
           , status = match[3]
         if (! code) return
         if (! capturedDescs[code])
-            return out += `\noompsh.js:${num+1} contains ${okOrError}-code ${
+            return out += `\nmoosse.js:${num+1} contains ${okOrError}-code ${
             code}, test.js does not`
             + ('7990'===code ? '\n  (prevents infinite recursion)' : '')
         if (status !== capturedDescs[code][0])
-            return out += `\noompsh.js:${num+1} ${okOrError}-code ${code
+            return out += `\nmoosse.js:${num+1} ${okOrError}-code ${code
             } has status ${status}, but in test.js it is status ${
             capturedDescs[code][0]}`
-        if (capturedDescs[code].foundInOompshSrc)
-            return out += `\noompsh.js:${num+1} redeclares ${okOrError}-code ${code}`
-        capturedDescs[code].foundInOompshSrc = true
+        if (capturedDescs[code].foundInMoosseSrc)
+            return out += `\nmoosse.js:${num+1} redeclares ${okOrError}-code ${code}`
+        capturedDescs[code].foundInMoosseSrc = true
     })
 
-    oompshSrc.forEach( (line, num) => {
+    moosseSrc.forEach( (line, num) => {
         const // eg 'code:8010'
             match = line.match(/code:\s*(\d{4})/) || []
           , code = match[1]
         if (! code) return
         if (! capturedDescs[code])
-            return out += `\noompsh.js:${num+1} contains code ${
+            return out += `\nmoosse.js:${num+1} contains code ${
             code}, test.js does not`
-        if (capturedDescs[code].foundInOompshSrc)
-            return out += `\noompsh.js:${num+1} redeclares code ${code}`
-        capturedDescs[code].foundInOompshSrc = true
+        if (capturedDescs[code].foundInMoosseSrc)
+            return out += `\nmoosse.js:${num+1} redeclares code ${code}`
+        capturedDescs[code].foundInMoosseSrc = true
     })
 
-    //// Check that test.js does not contain codes which oompsh.js does not.
+    //// Check that test.js does not contain codes which moosse.js does not.
     for (let code in capturedDescs) {
-        if (! capturedDescs[code].foundInOompshSrc)
-            out += `\ntest.js contains code ${code}, oompsh.js does not`
+        if (! capturedDescs[code].foundInMoosseSrc)
+            out += `\ntest.js contains code ${code}, moosse.js does not`
     }
 
-    //// Check that all codes in oompsh-config.js have tests.
+    //// Check that all codes in moosse-config.js have tests.
     [].concat(
-        Object.keys(OOMPSH.api.ok)
-      , Object.keys(OOMPSH.api.error)
+        Object.keys(MOOSSE.api.ok)
+      , Object.keys(MOOSSE.api.error)
     ).forEach( code => {
-        if (OOMPSH.api.ok[code] && OOMPSH.api.error[code])
-            return out += `\noompsh-config.js contains code ${code
-            } in its OOMPSH.api.ok AND OOMPSH.api.error`
-        const okOrError = OOMPSH.api.ok[code] ? 'ok' : 'error'
-        const status = OOMPSH.api[okOrError][code].status
+        if (MOOSSE.api.ok[code] && MOOSSE.api.error[code])
+            return out += `\nmoosse-config.js contains code ${code
+            } in its MOOSSE.api.ok AND MOOSSE.api.error`
+        const okOrError = MOOSSE.api.ok[code] ? 'ok' : 'error'
+        const status = MOOSSE.api[okOrError][code].status
         if (! capturedDescs[code])
-            return out += `\noompsh-config.js contains ${okOrError}-code ${
+            return out += `\nmoosse-config.js contains ${okOrError}-code ${
             code}, test.js does not`
             + ('7990'===code ? '\n  (prevents infinite recursion)' : '')
         if (status && status+'' !== capturedDescs[code][0])
-            return out += `\noompsh-config.js ${okOrError}-code ${
+            return out += `\nmoosse-config.js ${okOrError}-code ${
             code} has status ${status}, but in test.js it is status ${
             capturedDescs[code][0]}`
-        capturedDescs[code].foundInOompshConfig = true
+        capturedDescs[code].foundInMoosseConfig = true
     })
 
-    //// Check that test.js does not contain codes which oompsh-config.js does not.
+    //// Check that test.js does not contain codes which moosse-config.js does not.
     for (let code in capturedDescs) {
-        if (! capturedDescs[code].foundInOompshConfig)
-            out += `\ntest.js contains code ${code}, oompsh-config.js does not`
+        if (! capturedDescs[code].foundInMoosseConfig)
+            out += `\ntest.js contains code ${code}, moosse-config.js does not`
     }
 
     ////
@@ -945,8 +945,8 @@ function test_SSE (
                     clearTimeout(timeout)
                     req.abort()
                 } else if (0 === i && secondPath) {
-                    const oompshID = json[0].data ? json[0].data.oompshID : 'X'
-                    secondPath = secondPath.replace('<oompshID>', oompshID)
+                    const moosseID = json[0].data ? json[0].data.moosseID : 'X'
+                    secondPath = secondPath.replace('<moosseID>', moosseID)
                     if (stdout) process.stdout.write(
                         '\n> test.js POST ' + secondPath + '\n')
                     test_JSON('POST', secondPath, secondPathBody, null, true)

@@ -1,8 +1,8 @@
 {
-  "name": "oompsh",
-  "version": "0.3.0",
-  "description": "A Node.js server which adds realtime push notification to Oom apps",
-  "main": "oompsh.js",
+  "name": "moosse",
+  "version": "0.3.2",
+  "description": "Mutable Objects Over Server-Sent Events. A Node.js server which push-notifies endusers when shared resources change",
+  "main": "moosse.js",
   "engines": {
     "node": "8.9.4"
   },
@@ -13,13 +13,13 @@
   "devDependencies": {
   },
   "scripts": {
-    "start": "node oompsh.js",
+    "start": "node moosse.js",
     "test": "node test.js",
-    "build": "node config-builder.js oompsh-config.js"
+    "build": "node config-builder.js moosse-config.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loopdotcoop/oompsh.git"
+    "url": "git+https://github.com/loopdotcoop/moosse.git"
   },
   "keywords": [
     "Oom",
@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/loopdotcoop/oompsh/issues"
+    "url": "https://github.com/loopdotcoop/moosse/issues"
   },
-  "homepage": "http://oompsh.loop.coop/"
+  "homepage": "http://moosse.loop.coop/"
 }

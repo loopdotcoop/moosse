@@ -1,0 +1,101 @@
+input, pre, button, .samples a {
+    width: 100%;
+    padding: 0.25em 0.75em;
+    box-sizing: border-box;
+    border-radius: 0.5em;
+    border: none;
+    background: #ddd;
+    text-decoration: none;
+}
+button, .samples a {
+    color: #000;
+    background: #ccc;
+    border: 1px solid #fff;
+    border-top: 2px solid #eee;
+    border-bottom: 2px solid #bbb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+button {
+    font-family: Arial, sans-serif;
+}
+.samples a {
+    font-size: 0.8em;
+}
+button:hover, .samples a:hover {
+    background: #ddd;
+}
+button:focus, .samples a:focus {
+    background: #bbb;
+}
+button::-moz-focus-inner {
+    border: 0;
+}
+input, button, .samples a {
+    outline: none!important;
+}
+input {
+    width: 50%;
+    background: #cde;
+    border: 1px solid #fff;
+    border-top: 2px solid #abc;
+    border-bottom: 2px solid #def;
+}
+input::placeholder {
+    color: #16a;
+}
+input.valid {
+    background: #ced;
+    border-top: 2px solid #acb;
+    border-bottom: 2px solid #dfe;
+}
+input.invalid {
+    background: #ecd;
+    border-top: 2px solid #cab;
+    border-bottom: 2px solid #fde;
+}
+input#apiv {
+    width: 3.5em;
+}
+.samples {
+    margin-bottom: 0.3em;
+}
+.samples button {
+    width: 15em;
+}
+pre {
+    margin-top: 0.3em;
+    line-height: 2px;
+}
+pre div {
+    padding: 0.2em;
+    margin:0;
+    line-height: 1em;
+}
+pre .client   { background: #eee }
+pre .server   { background: #cde }
+pre .client.error  { color: red }
+pre .client.ok     { color: black }
+pre .server.error  { color: red }
+pre .server.ok     { color: #16a }
+pre .message  { background: #ced }
+pre .end      { background: #cff }
+pre .log      { background: #ffd }
+pre .bread    { background: #fcf }
+.table {
+    display: table;
+    width: 100%;
+    margin: 2px 0;
+}
+.table >* {
+    display: table-cell;
+    width: 22.5%;
+}
+#admin-method,
+#enduser-method {
+    width: 10%;
+}
+#admin-body,
+#enduser-body {
+    width: 77.5%;
+}

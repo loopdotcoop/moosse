@@ -1,15 +1,20 @@
-# Oompsh
+# Moosse
 
-#### A Node.js server which adds realtime push notification to Oom apps
 
-+ __Last update:__  2018/04/18
-+ __Version:__      0.3.0
 
-[Homepage](http://oompsh.loop.coop/) &nbsp;
-[Repo](https://github.com/loopdotcoop/oompsh) &nbsp;
-[NPM](https://www.npmjs.com/package/oompsh) &nbsp;
-[Changelog](http://oompsh.loop.coop/CHANGELOG) &nbsp;
-[Test @TODO](http://oompsh.loop.coop/support/test.html)
+
+## Mutable Objects Over Server-Sent Events
+
+#### A Node.js server which push-notifies endusers when shared resources change
+
++ __Last update:__  2018/04/20
++ __Version:__      0.3.2
+
+[Homepage](http://moosse.loop.coop/) &nbsp;
+[Repo](https://github.com/loopdotcoop/moosse) &nbsp;
+[NPM](https://www.npmjs.com/package/moosse) &nbsp;
+[Changelog](http://moosse.loop.coop/CHANGELOG) &nbsp;
+[Test @TODO](http://moosse.loop.coop/support/test.html)
 
 Oom &nbsp;
 🔅 &nbsp;
@@ -22,7 +27,22 @@ Server-Sent Events
 
 
 
-## Author
+## About
+
++ __Locales:__
+  - English
++ __Software:__
+  - Atom
+  - Git
++ __Languages:__
+  - HTML5
+  - CSS3
+  - JavaScript ES6
++ __Dependencies:__
+  - None!
+
+
+#### Author
 
 Designed, developed and authored by Rich Plastow for Loop.Coop.
 
@@ -41,49 +61,64 @@ Designed, developed and authored by Rich Plastow for Loop.Coop.
 
 
 
-## App
+## Fork
 
-+ __Locales:__
-  - English
-+ __Software:__
-  - Atom
-  - Git
-+ __Languages:__
-  - HTML5
-  - CSS3
-  - JavaScript ES6
-+ __Dependencies:__
-  - None!
+#### Heroku
+
+You’ll need to install the Heroku Command Line Interface (CLI). There’s a [link
+here](https://devcenter.heroku.com/articles/getting-started-with-nodejs#set-up).
+
+Clone the Moosse repo:  
+`$ git clone https://github.com/loopdotcoop/moosse.git`
+
+After cloning the Moosse repo, set up Heroku:  
+`$ heroku login # ...and enter your email and Heroku password`  
+`$ heroku apps:create my-great-moosse server # `
+
+Once Heroku is set up, you can check for current environment (config) variables:  
+`$ heroku run printenv`  
+
+You’ll need to choose an admin username and password, and record it in the
+`MOOSSE_ADMIN_CREDENTIALS` config var:  
+`$ heroku config:set MOOSSE_ADMIN_CREDENTIALS=<admin-username>:<admin-password>`
+
+You can define any number of admin credentials this way, eg:  
+`$ heroku config:set MOOSSE_ADMIN_CREDENTIALS=jo:pw,sam:pass,pat:foobar`  
+Note that moosse.js throws an error on startup if any credentials are invalid.
+
+After each `$ git commit` and `$ git push`, you should redeploy the app:  
+`$ git push heroku master`
 
 
 
 
 <!-- BEGIN config-builder.js -->
-## Namespace
+## Config
 
-The global namespace is `window.OOMPSH` in a browser, or `global.OOMPSH` in the
+
+#### Namespace
+
+The global namespace is `window.MOOSSE` in a browser, or `global.MOOSSE` in the
 Node.js server.
 
 ```js
-ROOT.OOMPSH = {}
+ROOT.MOOSSE = {}
 ```
 
-
-
-## Configuration
+#### Configuration
 
 ```js
-ROOT.OOMPSH.configuration = {
+ROOT.MOOSSE.configuration = {
 
-    VERSION: '0.3.0' // the major part of this is also the API version, `APIV`
-  , get APIV () { return 'v' + ROOT.OOMPSH.configuration.VERSION.split('.')[0] }
+    VERSION: '0.3.2' // the major part of this is also the API version, `APIV`
+  , get APIV () { return 'v' + ROOT.MOOSSE.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.
-  , remoteURL: 'https://oompsh.herokuapp.com'
+  , remoteURL: 'https://moosse.herokuapp.com'
 
     //// Part of the response with various errors.
-  , apiURL: 'https://github.com/loopdotcoop/oompsh#api'
-  , validatorsURL: 'https://github.com/loopdotcoop/oompsh#validators'
+  , apiURL: 'https://github.com/loopdotcoop/moosse#api'
+  , validatorsURL: 'https://github.com/loopdotcoop/moosse#validators'
 
     //// Maximum number of characters in...
   , maxMessageLength: 2048 // a 'notify' message
@@ -102,13 +137,11 @@ ROOT.OOMPSH.configuration = {
 ```
 
 
-
-
-## API
+#### API
 
 Request URLs can have up to four parts:
-1. Oompsh __API version,__ currently `v0`. This is the only mandatory part
-2. __Credentials,__ in the form `<my-username>:<my-password>`. Oompsh expects HTTPS!
+1. Moosse __API version,__ currently `v0`. This is the only mandatory part
+2. __Credentials,__ in the form `<my-username>:<my-password>`. Moosse expects HTTPS!
 3. An __action,__ eg `version`, `begin` or `notify`
 4. A __filter,__ eg `all`, `admin`, `enduser`, or an SSE client ID, eg `a1b2c3` _[@TODO ID filter]_
 
@@ -129,8 +162,8 @@ comma-delimited list of WordPress post-types, eg `post,page,my-cpt` _[@TODO post
 
 
 ```js
-const OOMPSH = ROOT.OOMPSH
-const api = ROOT.OOMPSH.api = {
+const MOOSSE = ROOT.MOOSSE
+const api = ROOT.MOOSSE.api = {
 
     //// Endusers can only GET:
     enduser: {
@@ -173,10 +206,10 @@ const api = ROOT.OOMPSH.api = {
         }
     }
 
-    //// The Oompsh server responds with one of these HTTP status codes.
+    //// The Moosse server responds with one of these HTTP status codes.
   , status: {
         200: 'OK'
-      , 401: 'UNAUTHORIZED' // nb, Oompsh doesn’t send a WWW-Authenticate header
+      , 401: 'UNAUTHORIZED' // nb, Moosse doesn’t send a WWW-Authenticate header
       , 404: 'NOT FOUND'
       , 405: 'METHOD NOT ALLOWED'
       , 406: 'NOT ACCEPTABLE'
@@ -188,8 +221,8 @@ const api = ROOT.OOMPSH.api = {
   , ok: {
 
         //// 6000-6999: GET and OPTIONS.
-        6000: { status:200, eg:'GET /v0', tip:'Retrieve the Oompsh API' }
-      , 6100: { status:200, eg:'GET /v0/version', tip:'Retrieve the Oompsh version' }
+        6000: { status:200, eg:'GET /v0', tip:'Retrieve the Moosse API' }
+      , 6100: { status:200, eg:'GET /v0/version', tip:'Retrieve the Moosse version' }
       , 6900: { status:200, eg:'OPTIONS /', tip:"You're probably a CORS preflight" }
 
         //// 7000-7999: POST.
@@ -224,7 +257,7 @@ const api = ROOT.OOMPSH.api = {
     //// 9000-9999: Errors.
   , error: {
 
-        //// 9000-9099: Oompsh startup errors.
+        //// 9000-9099: Moosse startup errors.
         //// @TODO
 
         //// 9100-9199: Errors serving a file.
@@ -271,21 +304,19 @@ api.admin.POST = Object.assign({}, api.enduser.POST, api.admin.POST)
 ```
 
 
-
-
-## Validators
+#### Validators
 
 ```js
-const OOMPSH = ROOT.OOMPSH
+const MOOSSE = ROOT.MOOSSE
     , { c1, c2, maxMessageLength:mml, maxTitleLength:mtl }
-        = OOMPSH.configuration
-    , { admin, enduser } = OOMPSH.api
+        = MOOSSE.configuration
+    , { admin, enduser } = MOOSSE.api
 
-OOMPSH.valid = {
+MOOSSE.valid = {
     local:  /^https?:\/\/(127\.0\.0\.1|localhost)/
   , domain: /^https?:\/\/[-:.a-z0-9]+\/?$/
 
-  , oompshID: /^\d[a-z\d]{6}$/ // a digit, then six digits or l.c. letters
+  , moosseID: /^\d[a-z\d]{6}$/ // a digit, then six digits or l.c. letters
 
     //// Username, password and credentials.
   , user:  new RegExp(`^(${c1}${c2}{0,64})$`)
@@ -305,7 +336,7 @@ OOMPSH.valid = {
     //// Filters.
   , filter: {
         standard: { //@TODO rename `user`
-            oompshID: /^\d[a-z\d]{6}$/
+            moosseID: /^\d[a-z\d]{6}$/
           , usertype: /^(admin|enduser)$/
           , group:    /^all$/ } // currently there is only one group
       , bread: {
@@ -326,18 +357,4 @@ OOMPSH.valid = {
 
 
 
-## Heroku
-
-Once Heroku is set up, you can check for current environment (config) variables:  
-`$ heroku run printenv`  
-
-You’ll need to choose an admin username and password, and record it in the
-`OOMPSH_ADMIN_CREDENTIALS` config var:  
-`$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=<admin-username>:<admin-password>`
-
-You can define any number of admin credentials this way, eg:  
-`$ heroku config:set OOMPSH_ADMIN_CREDENTIALS=jo:pw,sam:pass,pat:foobar`  
-Note that oompsh.js throws an error on startup if any credentials are invalid.
-
-After each `$ git commit` and `$ git push`, you should redeploy the app:  
-`$ git push heroku master`
+## FAQ

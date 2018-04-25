@@ -1,11 +1,11 @@
-//// config-builder.js //// 0.3.0 //// Converts README.md to *-config.js ///////
+//// config-builder.js //// 0.3.2 //// Converts README.md to *-config.js ///////
 
 !function(){
 
     //// Validate the output filename. Should have called:
-    //// `$ node config-builder.js oompsh-config.js`
+    //// `$ node config-builder.js moosse-config.js`
     if ('object' !== typeof process) return console.error(`Must run in Node.js`)
-    if (! process.argv[2]) return console.error(`Output? eg ‘oompsh-config.js’`)
+    if (! process.argv[2]) return console.error(`Output? eg ‘moosse-config.js’`)
     if (! /\.js$/.test(process.argv[2]) ) return console.error(`Output not .js`)
 
     const
