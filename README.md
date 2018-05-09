@@ -7,8 +7,8 @@
 
 #### A Node.js server which push-notifies endusers when shared resources change
 
-+ __Last update:__  2018/04/20
-+ __Version:__      0.3.3
++ __Last update:__  2018/04/28
++ __Version:__      0.3.4
 
 [Homepage](http://moosse.loop.coop/) &nbsp;
 [Repo](https://github.com/loopdotcoop/moosse) &nbsp;
@@ -111,7 +111,7 @@ ROOT.MOOSSE = {}
 ```js
 ROOT.MOOSSE.configuration = {
 
-    VERSION: '0.3.3' // the major part of this is also the API version, `APIV`
+    VERSION: '0.3.4' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.MOOSSE.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.

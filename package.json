@@ -1,6 +1,6 @@
 {
   "name": "moosse",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Mutable Objects Over Server-Sent Events. A Node.js server which push-notifies endusers when shared resources change",
   "main": "moosse.js",
   "engines": {

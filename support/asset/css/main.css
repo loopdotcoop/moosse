@@ -290,10 +290,14 @@ header .logo-wrap >span,
         , #85279f 25%, #000 70%, #85279f 75%, #000 80%
       );
     background-size: 100% 100%;
-    filter: hue-rotate(0) saturate(200%);
+}
+#bkgnd {
+    filter: hue-rotate(-30deg) saturate(100%);
+    background-size: 250% 100%;
 }
 header .logo-wrap >span,
 #intro .logo {
+    filter: hue-rotate(0) saturate(200%);
     animation-duration: 30s;
     animation-iteration-count: infinite;
     animation-name: abstract-1;

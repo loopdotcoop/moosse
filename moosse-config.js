@@ -1,4 +1,4 @@
-//// moosse-config.js //// 0.3.3 //// Config shared by browsers and servers ////
+//// moosse-config.js //// 0.3.4 //// Config shared by browsers and servers ////
 
 /**
 ## Namespace
@@ -20,7 +20,7 @@ ROOT.MOOSSE = {}
 
 ROOT.MOOSSE.configuration = {
 
-    VERSION: '0.3.3' // the major part of this is also the API version, `APIV`
+    VERSION: '0.3.4' // the major part of this is also the API version, `APIV`
   , get APIV () { return 'v' + ROOT.MOOSSE.configuration.VERSION.split('.')[0] }
 
     //// Used as one of the default `domain` values in the frontend UI.

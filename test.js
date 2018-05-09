@@ -1,4 +1,4 @@
-//// config-builder.js //// 0.3.3 //// Converts README.md to *-config.js ///////
+//// config-builder.js //// 0.3.4 //// Converts README.md to *-config.js ///////
 
 !function(){
 
